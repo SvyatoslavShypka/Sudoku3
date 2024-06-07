@@ -12,10 +12,12 @@ if __name__ == '__main__':
     pygame.font.init()
 
     # Total window
-    screen = pygame.display.set_mode((500, 600))
+    width = 500
+    height = 600
+    screen = pygame.display.set_mode((width, height))
 
     # Title and Icon
-    pygame.display.set_caption("SUDOKU SOLVER USING BACKTRACKING")
+    pygame.display.set_caption("SUDOKU GAME")
     img = pygame.image.load('icon.png')
     pygame.display.set_icon(img)
 
@@ -37,8 +39,9 @@ if __name__ == '__main__':
     ]
 
     # Load test fonts for future use
-    font1 = pygame.font.SysFont("comicsans", 40)
-    font2 = pygame.font.SysFont("comicsans", 20)
+    # font numbers
+    fontNumbers = pygame.font.SysFont("comicsans", 30)
+    fontInfo = pygame.font.SysFont("comicsans", 18)
 
 
     def get_cord(pos):
@@ -46,7 +49,6 @@ if __name__ == '__main__':
         x = pos[0] // dif
         global y
         y = pos[1] // dif
-
 
     # Highlight the cell selected
     def draw_box():
@@ -67,7 +69,7 @@ if __name__ == '__main__':
                     pygame.draw.rect(screen, (0, 153, 153), (i * dif, j * dif, dif + 1, dif + 1))
 
                     # Fill grid with default numbers specified
-                    text1 = font1.render(str(grid[i][j]), 1, (0, 0, 0))
+                    text1 = fontNumbers.render(str(grid[i][j]), 1, (0, 0, 0))
                     screen.blit(text1, (i * dif + 15, j * dif + 15))
         # Draw lines horizontally and verticallyto form grid
         for i in range(10):
@@ -82,18 +84,18 @@ if __name__ == '__main__':
 
 
     def draw_val(val):
-        text1 = font1.render(str(val), 1, (0, 0, 0))
+        text1 = fontNumbers.render(str(val), 1, (0, 0, 0))
         screen.blit(text1, (x * dif + 15, y * dif + 15))
 
 
     # Raise error when wrong value entered
     def raise_error1():
-        text1 = font1.render("WRONG !!!", 1, (0, 0, 0))
+        text1 = fontNumbers.render("WRONG !!!", 1, (0, 0, 0))
         screen.blit(text1, (20, 570))
 
 
     def raise_error2():
-        text1 = font1.render("Wrong !!! Not a valid Key", 1, (0, 0, 0))
+        text1 = fontNumbers.render("Wrong !!! Not a valid Key", 1, (0, 0, 0))
         screen.blit(text1, (20, 570))
 
 
@@ -152,15 +154,15 @@ if __name__ == '__main__':
 
     # Display instruction for the game
     def instruction():
-        text1 = font2.render("PRESS D TO RESET TO DEFAULT / R TO EMPTY", 1, (0, 0, 0))
-        text2 = font2.render("ENTER VALUES AND PRESS ENTER TO VISUALIZE", 1, (0, 0, 0))
+        text1 = fontInfo.render("PRESS D TO RESET TO DEFAULT / R TO EMPTY", 1, (0, 0, 0))
+        text2 = fontInfo.render("ENTER VALUES AND PRESS ENTER TO VISUALIZE", 1, (0, 0, 0))
         screen.blit(text1, (20, 520))
         screen.blit(text2, (20, 540))
 
 
     # Display options when solved
     def result():
-        text1 = font1.render("FINISHED PRESS R or D", 1, (0, 0, 0))
+        text1 = fontNumbers.render("FINISHED PRESS R or D", 1, (0, 0, 0))
         screen.blit(text1, (20, 570))
 
 
