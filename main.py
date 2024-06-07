@@ -1,14 +1,8 @@
 # import pygame library
 import pygame
 
-
 if __name__ == '__main__':
-    # randomise start table
-    # make smaller font
-    # hold start numbers /can't be deleted/
-    # add time and scores
-    # make different colors
-    # initialise the pygame font
+    # Initialise the pygame font
     pygame.font.init()
 
     # Total window
@@ -56,12 +50,9 @@ if __name__ == '__main__':
             pygame.draw.line(screen, (255, 0, 0), (x * dif - 3, (y + i) * dif), (x * dif + dif + 3, (y + i) * dif), 7)
             pygame.draw.line(screen, (255, 0, 0), ((x + i) * dif, y * dif), ((x + i) * dif, y * dif + dif), 7)
 
-        # Function to draw required lines for making Sudoku grid
-
 
     def draw():
         # Draw the lines
-
         for i in range(9):
             for j in range(9):
                 if grid[i][j] != 0:
@@ -70,8 +61,9 @@ if __name__ == '__main__':
 
                     # Fill grid with default numbers specified
                     text1 = fontNumbers.render(str(grid[i][j]), 1, (0, 0, 0))
-                    screen.blit(text1, (i * dif + 15, j * dif + 15))
-        # Draw lines horizontally and verticallyto form grid
+                    text_rect = text1.get_rect(center=(i * dif + dif / 2, j * dif + dif / 2))
+                    screen.blit(text1, text_rect)
+        # Draw lines horizontally and vertically to form grid
         for i in range(10):
             if i % 3 == 0:
                 thick = 7
@@ -80,12 +72,11 @@ if __name__ == '__main__':
             pygame.draw.line(screen, (0, 0, 0), (0, i * dif), (500, i * dif), thick)
             pygame.draw.line(screen, (0, 0, 0), (i * dif, 0), (i * dif, 500), thick)
 
-        # Fill value entered in cell
-
 
     def draw_val(val):
         text1 = fontNumbers.render(str(val), 1, (0, 0, 0))
-        screen.blit(text1, (x * dif + 15, y * dif + 15))
+        text_rect = text1.get_rect(center=(x * dif + dif / 2, y * dif + dif / 2))
+        screen.blit(text1, text_rect)
 
 
     # Raise error when wrong value entered
@@ -127,24 +118,23 @@ if __name__ == '__main__':
                 return True
         pygame.event.pump()
         for it in range(1, 10):
-            if valid(grid, i, j, it) == True:
+            if valid(grid, i, j, it):
                 grid[i][j] = it
                 global x, y
                 x = i
                 y = j
-                # white color background\
+                # white color background
                 screen.fill((255, 255, 255))
                 draw()
                 draw_box()
                 pygame.display.update()
                 pygame.time.delay(20)
-                if solve(grid, i, j) == 1:
+                if solve(grid, i, j):
                     return True
                 else:
                     grid[i][j] = 0
-                # white color background\
+                # white color background
                 screen.fill((255, 255, 255))
-
                 draw()
                 draw_box()
                 pygame.display.update()
@@ -260,9 +250,7 @@ if __name__ == '__main__':
             flag2 = 0
         if val != 0:
             draw_val(val)
-            # print(x)
-            # print(y)
-            if valid(grid, int(x), int(y), val) == True:
+            if valid(grid, int(x), int(y), val):
                 grid[int(x)][int(y)] = val
                 flag1 = 0
             else:
