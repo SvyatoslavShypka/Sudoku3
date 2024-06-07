@@ -3,7 +3,11 @@ import pygame
 
 
 if __name__ == '__main__':
-
+    # randomise start table
+    # make smaller font
+    # hold start numbers /can't be deleted/
+    # add time and scores
+    # make different colors
     # initialise the pygame font
     pygame.font.init()
 
