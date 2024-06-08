@@ -9,7 +9,6 @@ class LoginWindow(QWidget):
         self.setup()
 
 
-
     def setup(self):
         width = 1000
         height = 1000
