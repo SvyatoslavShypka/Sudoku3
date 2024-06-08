@@ -1,7 +1,6 @@
-# import pygame library
 import time
-
 import pygame
+import random
 
 
 def get_mouse_position(pos):
@@ -122,8 +121,9 @@ def solve(grid, i, j):
             screen.fill((255, 255, 255))
             draw_grids()
             highlight_cell()
-            pygame.display.update()
-            pygame.time.delay(20)
+            if visualize:
+                pygame.display.update()
+            pygame.time.delay(1)
             if solve(grid, i, j):
                 return True
             else:
@@ -132,8 +132,9 @@ def solve(grid, i, j):
             screen.fill((255, 255, 255))
             draw_grids()
             highlight_cell()
-            pygame.display.update()
-            pygame.time.delay(50)
+            if visualize:
+                pygame.display.update()
+                pygame.time.delay(50)
     return False
 
 
@@ -172,6 +173,48 @@ def create_grid():
         [1, 2, 0, 0, 0, 7, 4, 0, 0],
         [0, 4, 9, 2, 0, 6, 0, 0, 7]
     ]
+    return grid
+
+
+def randomize_grid(level):
+    grid = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ]
+
+    # randomize first line and solve rest
+    x = y = 0
+    num = random.randint(1, dimension)
+    for i in range(dimension):
+        while not is_allowed_here(grid, x, y, num):
+            num = random.randint(1, dimension)
+        grid[x][y] = num
+        x = x + 1
+    solve(grid, 0, 0)
+    grid = leverage_grid(grid, level)
+    return grid
+
+
+def leverage_grid(grid, level):
+    if level == 1:
+        to_delete = dimension * dimension * 3 // 6 - 1
+    elif level == 2:
+        to_delete = dimension * dimension * 3 // 5 - 1
+    else:
+        to_delete = dimension * dimension * 3 // 4 - 1
+    while to_delete > 0:
+        x = random.randint(0, dimension - 1)
+        y = random.randint(0, dimension - 1)
+        if grid[x][y] != 0:
+            grid[x][y] = 0
+            to_delete -= 1
     return grid
 
 
@@ -228,6 +271,7 @@ if __name__ == '__main__':
     fontInfo = pygame.font.SysFont("comicsans", 18)
 
     run = True
+    visualize = False
     eventPerformed = False
     toSolve = False
     isResolved = False
@@ -284,6 +328,9 @@ if __name__ == '__main__':
                     num = 9
                 if event.key == pygame.K_RETURN:
                     toSolve = True
+                    visualize = True
+                if event.key == pygame.K_c:
+                    grid = randomize_grid(1)
                 # If R pressed clear the sudoku board
                 if event.key == pygame.K_r:
                     isResolved = False
@@ -302,6 +349,7 @@ if __name__ == '__main__':
             else:
                 isResolved = True
             toSolve = False
+            visualize = False
         if num != 0:
             draw_number(num)
             if is_allowed_here(grid, int(x), int(y), num):
