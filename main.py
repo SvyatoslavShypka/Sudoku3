@@ -84,14 +84,17 @@ def raise_error2():
 def is_allowed_here(m, i, j, num):
     # Function to check if the entered value is valid in the Sudoku board
     for it in range(dimension):
+        # check in horizontal line
         if m[i][it] == num:
             return False
+        # check in vertical line
         if m[it][j] == num:
             return False
-    it = i // 3
-    jt = j // 3
-    for i in range(it * 3, it * 3 + 3):
-        for j in range(jt * 3, jt * 3 + 3):
+    it = i // square
+    jt = j // square
+    # check in square
+    for i in range(it * square, it * square + square):
+        for j in range(jt * square, jt * square + square):
             if m[i][j] == num:
                 return False
     return True
@@ -150,6 +153,36 @@ def finished():
     screen.blit(text1, (20, 570))
 
 
+def reset_grid(grid):
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            grid[i][j] = 0
+    return grid
+
+
+def create_grid():
+    grid = [
+        [7, 8, 0, 4, 0, 0, 1, 2, 0],
+        [6, 0, 0, 0, 7, 5, 0, 0, 9],
+        [0, 0, 0, 6, 0, 1, 0, 7, 8],
+        [0, 0, 7, 0, 4, 0, 2, 6, 0],
+        [0, 0, 1, 0, 5, 0, 9, 3, 0],
+        [9, 0, 4, 0, 6, 0, 0, 0, 5],
+        [0, 7, 0, 3, 0, 0, 0, 1, 2],
+        [1, 2, 0, 0, 0, 7, 4, 0, 0],
+        [0, 4, 9, 2, 0, 6, 0, 0, 7]
+    ]
+    return grid
+
+
+def copy_grid(grid_from):
+    grid = create_grid()
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            grid[i][j] = grid_from[i][j]
+    return grid
+
+
 if __name__ == '__main__':
     # TODO: first numbers can't be edited
     # first numbers have to have another color
@@ -162,8 +195,10 @@ if __name__ == '__main__':
     # load/save
     # add undo/redo
 
+    # square
+    square = 3
     # Dimention 9x9 = 9
-    dimension = 9
+    dimension = square * square
     # Initialise the pygame font
     pygame.font.init()
 
@@ -184,17 +219,8 @@ if __name__ == '__main__':
     cell_length = 500 / dimension
     num = 0
     # Default Sudoku Board.
-    grid = [
-        [7, 8, 0, 4, 0, 0, 1, 2, 0],
-        [6, 0, 0, 0, 7, 5, 0, 0, 9],
-        [0, 0, 0, 6, 0, 1, 0, 7, 8],
-        [0, 0, 7, 0, 4, 0, 2, 6, 0],
-        [0, 0, 1, 0, 5, 0, 9, 3, 0],
-        [9, 0, 4, 0, 6, 0, 0, 0, 5],
-        [0, 7, 0, 3, 0, 0, 0, 1, 2],
-        [1, 2, 0, 0, 0, 7, 4, 0, 0],
-        [0, 4, 9, 2, 0, 6, 0, 0, 7]
-    ]
+    grid_default = create_grid()
+    grid = copy_grid(grid_default)
 
     # Load test fonts for future use
     # font numbers
@@ -263,33 +289,13 @@ if __name__ == '__main__':
                     isResolved = False
                     wasError = False
                     toSolve = False
-                    grid = [
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0]
-                    ]
+                    grid = reset_grid(grid)
                 # If D is pressed reset the board to default
                 if event.key == pygame.K_d:
                     isResolved = False
                     wasError = False
                     toSolve = False
-                    grid = [
-                        [7, 8, 0, 4, 0, 0, 1, 2, 0],
-                        [6, 0, 0, 0, 7, 5, 0, 0, 9],
-                        [0, 0, 0, 6, 0, 1, 0, 7, 8],
-                        [0, 0, 7, 0, 4, 0, 2, 6, 0],
-                        [0, 0, 1, 0, 5, 0, 9, 3, 0],
-                        [9, 0, 4, 0, 6, 0, 0, 0, 5],
-                        [0, 7, 0, 3, 0, 0, 0, 1, 2],
-                        [1, 2, 0, 0, 0, 7, 4, 0, 0],
-                        [0, 4, 9, 2, 0, 6, 0, 0, 7]
-                    ]
+                    grid = copy_grid(grid_default)
         if toSolve:
             if not solve(grid, 0, 0):
                 wasError = True
