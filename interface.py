@@ -1,13 +1,13 @@
 from random import randint
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QLabel
 from PySide6.QtGui import QCloseEvent, QPixmap
+import multiprocessing
 import sudoku_game
-import threading
 
 def new_game():
-    # Create a new thread to run the start_game function
-    game_thread = threading.Thread(target=sudoku_game.start_game)
-    game_thread.start()
+    # Create a new process to run the start_game function
+    game_process = multiprocessing.Process(target=sudoku_game.start_game)
+    game_process.start()
 
 class LoginWindow(QWidget):
     def __init__(self):
@@ -44,7 +44,7 @@ class LoginWindow(QWidget):
             event.ignore()
 
 if __name__ == '__main__':
-    # first interface
+    multiprocessing.set_start_method('spawn')
     app = QApplication([])
 
     login_window = LoginWindow()

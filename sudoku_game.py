@@ -1,109 +1,70 @@
-import time
 import pygame
 import random
 
 
 def start_game():
+    pygame_icon = pygame.image.load("icon.png")
+    pygame.display.set_icon(pygame_icon)
+
 
     def get_mouse_position(pos):
-        # Function to get the grid coordinates based on mouse position
-        global x
+        nonlocal x, y
         x = pos[0] // cell_length
         if x > dimension - 1:
             x = dimension - 1
         elif x < 0:
             x = 0
-        global y
         y = pos[1] // cell_length
         if y > dimension - 1:
             y = dimension - 1
         elif y < 0:
             y = 0
 
-
-    # Highlight the cell selected
     def highlight_cell():
-        # Function to draw highlight box around the selected cell
         for i in range(2):
             pygame.draw.line(screen, (255, 0, 255), (x * cell_length - 3, (y + i) * cell_length),
                              (x * cell_length + cell_length + 3, (y + i) * cell_length), 7)
             pygame.draw.line(screen, (255, 0, 255), ((x + i) * cell_length, y * cell_length),
                              ((x + i) * cell_length, y * cell_length + cell_length), 7)
 
-
     def draw_grids():
-        # Function to draw the Sudoku grid
-        # Draw the lines
         for i in range(dimension):
             for j in range(dimension):
                 if grid[i][j] != 0:
-                    # Fill blue color in already numbered grid
                     pygame.draw.rect(screen, (0, 153, 153), (i * cell_length, j * cell_length, cell_length + 1, cell_length + 1))
-
-                    # Fill grid with default numbers specified
                     text1 = fontNumbers.render(str(grid[i][j]), 1, (0, 0, 0))
                     text_rect = text1.get_rect(center=(i * cell_length + cell_length / 2, j * cell_length + cell_length / 2))
                     screen.blit(text1, text_rect)
-        # Draw lines horizontally and vertically to form grid
         for i in range(dimension + 1):
-            if i % 3 == 0:
-                thick = 8
-            else:
-                thick = 2
-            #     horizontal lines
+            thick = 8 if i % 3 == 0 else 2
             pygame.draw.line(screen, (0, 0, 0), (0, i * cell_length), (500, i * cell_length), thick)
-            #     vertical lines
             pygame.draw.line(screen, (0, 0, 0), (i * cell_length, 0), (i * cell_length, 500 + thick / 2), thick)
 
-
     def draw_number(num):
-        # Function to draw the entered value in the selected cell
-        # Render the number as a text surface
         text1 = fontNumbers.render(str(num), 1, (0, 0, 0))
-        # Create a rectangle for the text surface, centered within the grid cell
         text_rect = text1.get_rect(center=(x * cell_length + cell_length / 2, y * cell_length + cell_length / 2))
-        # Blit (draw) the text surface onto the screen at the specified rectangle
         screen.blit(text1, text_rect)
 
-
-    # Raise error when wrong value entered
     def raise_error1():
-        # Function to raise error when the wrong value is entered
         text1 = fontNumbers.render("WRONG !!!", 1, (0, 0, 0))
-        # time.sleep(1)
         screen.blit(text1, (20, 570))
-
 
     def raise_error2():
-        # Function to raise error when an invalid number is pressed
         text1 = fontNumbers.render("Wrong !!! Not a valid Number", 1, (0, 0, 0))
-        # time.sleep(1)
         screen.blit(text1, (20, 570))
 
-
-    # Check if the value entered in board is valid
     def is_allowed_here(m, i, j, num):
-        # Function to check if the entered value is valid in the Sudoku board
         for it in range(dimension):
-            # check in horizontal line
-            if m[i][it] == num:
+            if m[i][it] == num or m[it][j] == num:
                 return False
-            # check in vertical line
-            if m[it][j] == num:
-                return False
-        it = i // square
-        jt = j // square
-        # check in square
+        it, jt = i // square, j // square
         for i in range(it * square, it * square + square):
             for j in range(jt * square, jt * square + square):
                 if m[i][j] == num:
                     return False
         return True
 
-
-    # Solves the sudoku board using Backtracking Algorithm
     def solve(grid, i, j):
-        # Function to solve the Sudoku board using backtracking algorithm
         while grid[i][j] != 0:
             if i < dimension - 1:
                 i += 1
@@ -116,10 +77,8 @@ def start_game():
         for it in range(1, 10):
             if is_allowed_here(grid, i, j, it):
                 grid[i][j] = it
-                global x, y
-                x = i
-                y = j
-                # white color background
+                nonlocal x, y
+                x, y = i, j
                 screen.fill((255, 255, 255))
                 draw_grids()
                 highlight_cell()
@@ -130,7 +89,6 @@ def start_game():
                     return True
                 else:
                     grid[i][j] = 0
-                # white color background
                 screen.fill((255, 255, 255))
                 draw_grids()
                 highlight_cell()
@@ -139,22 +97,15 @@ def start_game():
                     pygame.time.delay(50)
         return False
 
-
-    # Display instruction for the game
     def instruction():
-        # Function to display instructions for the game
         text1 = fontInfo.render("PRESS D TO RESET TO DEFAULT / R TO EMPTY", 1, (0, 0, 0))
         text2 = fontInfo.render("ENTER VALUES AND PRESS ENTER TO VISUALIZE", 1, (0, 0, 0))
         screen.blit(text1, (20, 520))
         screen.blit(text2, (20, 540))
 
-
-    # Display options when solved
     def finished():
-        # Function to display options when the Sudoku is solved
         text1 = fontNumbers.render("FINISHED PRESS R or D", 1, (0, 0, 0))
         screen.blit(text1, (20, 570))
-
 
     def reset_grid(grid):
         for i in range(len(grid)):
@@ -162,9 +113,8 @@ def start_game():
                 grid[i][j] = 0
         return grid
 
-
     def create_grid():
-        grid = [
+        return [
             [7, 8, 0, 4, 0, 0, 1, 2, 0],
             [6, 0, 0, 0, 7, 5, 0, 0, 9],
             [0, 0, 0, 6, 0, 1, 0, 7, 8],
@@ -175,204 +125,136 @@ def start_game():
             [1, 2, 0, 0, 0, 7, 4, 0, 0],
             [0, 4, 9, 2, 0, 6, 0, 0, 7]
         ]
-        return grid
-
 
     def randomize_grid(level):
-        grid = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        ]
-
-        # randomize first line and solve rest
+        grid = [[0] * dimension for _ in range(dimension)]
         x = y = 0
         num = random.randint(1, dimension)
         for i in range(dimension):
             while not is_allowed_here(grid, x, y, num):
                 num = random.randint(1, dimension)
             grid[x][y] = num
-            x = x + 1
+            x += 1
         solve(grid, 0, 0)
         grid = leverage_grid(grid, level)
         return grid
 
-
     def leverage_grid(grid, level):
-        if level == 1:
-            to_delete = dimension * dimension * 3 // 6 - 1
-        elif level == 2:
-            to_delete = dimension * dimension * 3 // 5 - 1
-        else:
-            to_delete = dimension * dimension * 3 // 4 - 1
-        while to_delete > 0:
+        # Adjust the grid by removing some numbers based on the level of difficulty
+        cells_to_remove = 20 + level * 5
+        for _ in range(cells_to_remove):
             x = random.randint(0, dimension - 1)
             y = random.randint(0, dimension - 1)
-            if grid[x][y] != 0:
-                grid[x][y] = 0
-                to_delete -= 1
+            while grid[x][y] == 0:
+                x = random.randint(0, dimension - 1)
+                y = random.randint(0, dimension - 1)
+            grid[x][y] = 0
         return grid
 
+    pygame.init()
 
-    def copy_grid(grid_from):
-        grid = create_grid()
-        for i in range(len(grid)):
-            for j in range(len(grid[0])):
-                grid[i][j] = grid_from[i][j]
-        return grid
-
-
-# if __name__ == '__main__':
-    # TODO: first numbers can't be edited
-    # first numbers have to have another color
-    # add time and scores
-    # restrict cursor to go outside the table
-    # errors don't work
-    # randomize first table
-    # centered table in the window
-    # choose level of complexity %
-    # load/save
-    # add undo/redo
-
-    # square
+    dimension = 9
     square = 3
-    # Dimention 9x9 = 9
-    dimension = square * square
-    # Initialise the pygame font
-    # if __name__ == '__main__':
-    # window size
-    width = 500
-    height = 600
-    x = 0
-    y = 0
-    pygame.font.init()
+    cell_length = 500 // dimension
+    visualize = True
 
-    # Total window
-    cell_length = 500 / dimension
-    screen = pygame.display.set_mode((width, height))
+    screen = pygame.display.set_mode((500, 600))
+    pygame.display.set_caption("Sudoku")
+    fontNumbers = pygame.font.SysFont("arial", cell_length // 2)
+    fontInfo = pygame.font.SysFont("arial", 20)
 
-    # Title and Icon
-    pygame.display.set_caption("SUDOKU GAME")
-    img = pygame.image.load('icon.png')
-    pygame.display.set_icon(img)
-    num = 0
+    grid = create_grid()
+    x = y = 0
 
-    # Default Sudoku Board.
-    grid_default = create_grid()
-    grid = copy_grid(grid_default)
 
-    # Load test fonts for future use
-    # font numbers
-    fontNumbers = pygame.font.SysFont("comicsans", 30)
-    fontInfo = pygame.font.SysFont("comicsans", 18)
-
-    run = True
-    visualize = False
-    eventPerformed = False
-    toSolve = False
-    isResolved = False
-    wasError = False
-    # The loop that keeps the window running
-    while run:
-        # White color background
+    running = True
+    while running:
         screen.fill((255, 255, 255))
-        # Loop through the events stored in event.get()
+        draw_grids()
+        highlight_cell()
+        instruction()
         for event in pygame.event.get():
-            # Quit the game window
             if event.type == pygame.QUIT:
-                run = False
-            # Get the mouse position to insert number
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                eventPerformed = True
-                pos = pygame.mouse.get_pos()
-                get_mouse_position(pos)
-            # Get the number to be inserted if key pressed
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                get_mouse_position(pygame.mouse.get_pos())
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    if x > 0:
-                        x -= 1
-                        eventPerformed = True
-                if event.key == pygame.K_RIGHT:
-                    if x < dimension - 1:
-                        x += 1
-                        eventPerformed = True
-                if event.key == pygame.K_UP:
-                    if y > 0:
-                        y -= 1
-                        eventPerformed = True
-                if event.key == pygame.K_DOWN:
-                    if y < dimension - 1:
-                        y += 1
-                        eventPerformed = True
-                if event.key == pygame.K_1:
+                    x = max(0, x - 1)
+                elif event.key == pygame.K_RIGHT:
+                    x = min(dimension - 1, x + 1)
+                elif event.key == pygame.K_UP:
+                    y = max(0, y - 1)
+                elif event.key == pygame.K_DOWN:
+                    y = min(dimension - 1, y + 1)
+                elif event.key == pygame.K_1:
                     num = 1
-                if event.key == pygame.K_2:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_2:
                     num = 2
-                if event.key == pygame.K_3:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_3:
                     num = 3
-                if event.key == pygame.K_4:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_4:
                     num = 4
-                if event.key == pygame.K_5:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_5:
                     num = 5
-                if event.key == pygame.K_6:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_6:
                     num = 6
-                if event.key == pygame.K_7:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_7:
                     num = 7
-                if event.key == pygame.K_8:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_8:
                     num = 8
-                if event.key == pygame.K_9:
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_9:
                     num = 9
-                if event.key == pygame.K_RETURN:
-                    toSolve = True
-                    visualize = True
-                if event.key == pygame.K_c:
-                    grid = randomize_grid(2)
-                # If R pressed clear the sudoku board
-                if event.key == pygame.K_r:
-                    isResolved = False
-                    wasError = False
-                    toSolve = False
+                    if is_allowed_here(grid, x, y, num):
+                        grid[x][y] = num
+                    else:
+                        raise_error2()
+                elif event.key == pygame.K_RETURN:
+                    if solve(grid, 0, 0):
+                        finished()
+                    else:
+                        raise_error1()
+                elif event.key == pygame.K_r:
                     grid = reset_grid(grid)
-                # If D is pressed reset the board to default
-                if event.key == pygame.K_d:
-                    isResolved = False
-                    wasError = False
-                    toSolve = False
-                    grid = copy_grid(grid_default)
-        if toSolve:
-            if not solve(grid, 0, 0):
-                wasError = True
-            else:
-                isResolved = True
-            toSolve = False
-            visualize = False
-        if num != 0:
-            draw_number(num)
-            if is_allowed_here(grid, int(x), int(y), num):
-                grid[int(x)][int(y)] = num
-                eventPerformed = False
-            else:
-                grid[int(x)][int(y)] = 0
-                raise_error2()
-            num = 0
+                elif event.key == pygame.K_d:
+                    grid = create_grid()
 
-        if wasError:
-            raise_error1()
-        if isResolved:
-            finished()
-        draw_grids()
-        if eventPerformed:
-            highlight_cell()
-        instruction()
-
-        # Update window
         pygame.display.update()
 
-        # Quit pygame window
     pygame.quit()
+
+
+if __name__ == "__main__":
+    start_game()
