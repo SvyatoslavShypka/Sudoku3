@@ -8,17 +8,25 @@ def get_mouse_position(pos):
     # Function to get the grid coordinates based on mouse position
     global x
     x = pos[0] // cell_length
+    if x > dimension - 1:
+        x = dimension - 1
+    elif x < 0:
+        x = 0
     global y
     y = pos[1] // cell_length
+    if y > dimension - 1:
+        y = dimension - 1
+    elif y < 0:
+        y = 0
 
 
 # Highlight the cell selected
 def highlight_cell():
     # Function to draw highlight box around the selected cell
     for i in range(2):
-        pygame.draw.line(screen, (255, 0, 0), (x * cell_length - 3, (y + i) * cell_length),
+        pygame.draw.line(screen, (255, 0, 255), (x * cell_length - 3, (y + i) * cell_length),
                          (x * cell_length + cell_length + 3, (y + i) * cell_length), 7)
-        pygame.draw.line(screen, (255, 0, 0), ((x + i) * cell_length, y * cell_length),
+        pygame.draw.line(screen, (255, 0, 255), ((x + i) * cell_length, y * cell_length),
                          ((x + i) * cell_length, y * cell_length + cell_length), 7)
 
 
@@ -38,11 +46,13 @@ def draw_grids():
     # Draw lines horizontally and vertically to form grid
     for i in range(dimension + 1):
         if i % 3 == 0:
-            thick = 7
+            thick = 8
         else:
-            thick = 1
+            thick = 2
+        #     horizontal lines
         pygame.draw.line(screen, (0, 0, 0), (0, i * cell_length), (500, i * cell_length), thick)
-        pygame.draw.line(screen, (0, 0, 0), (i * cell_length, 0), (i * cell_length, 500), thick)
+        #     vertical lines
+        pygame.draw.line(screen, (0, 0, 0), (i * cell_length, 0), (i * cell_length, 500 + thick / 2), thick)
 
 
 def draw_number(num):
