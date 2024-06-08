@@ -330,7 +330,7 @@ if __name__ == '__main__':
                     toSolve = True
                     visualize = True
                 if event.key == pygame.K_c:
-                    grid = randomize_grid(1)
+                    grid = randomize_grid(2)
                 # If R pressed clear the sudoku board
                 if event.key == pygame.K_r:
                     isResolved = False
