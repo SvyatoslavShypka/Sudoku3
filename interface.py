@@ -1,13 +1,7 @@
-from random import randint
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox, QLabel
 from PySide6.QtGui import QCloseEvent, QPixmap
 import multiprocessing
 import sudoku_game
-
-def new_game():
-    # Create a new process to run the start_game function
-    game_process = multiprocessing.Process(target=sudoku_game.start_game)
-    game_process.start()
 
 class LoginWindow(QWidget):
     def __init__(self):
@@ -25,7 +19,7 @@ class LoginWindow(QWidget):
 
         new_game_button = QPushButton("New game", self)
         new_game_button.move(width - 80, height / 4)
-        new_game_button.clicked.connect(new_game)
+        new_game_button.clicked.connect(self.new_game)
 
         quit_btn = QPushButton("Quit", self)
         quit_btn.move(width - 80, height - 30)
@@ -34,6 +28,11 @@ class LoginWindow(QWidget):
         self.setFixedSize(width, height)
         self.setWindowTitle("Sudoku Interface")
         self.show()
+
+    def new_game(self):
+        # Create a new process to run the start_game function
+        game_process = multiprocessing.Process(target=sudoku_game.start_game)
+        game_process.start()
 
     def closeEvent(self, event: QCloseEvent):
         should_close = QMessageBox.question(self, "Close App", "Do you want to close App?",

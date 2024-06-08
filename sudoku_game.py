@@ -1,31 +1,36 @@
 import pygame
 import random
-
+from PySide6.QtCore import QTimer
 
 def start_game():
+    def create_grid():
+        return [
+            [7, 8, 0, 4, 0, 0, 1, 2, 0],
+            [6, 0, 0, 0, 7, 5, 0, 0, 9],
+            [0, 0, 0, 6, 0, 1, 0, 7, 8],
+            [0, 0, 7, 0, 4, 0, 2, 6, 0],
+            [0, 0, 1, 0, 5, 0, 9, 3, 0],
+            [9, 0, 4, 0, 6, 0, 0, 0, 5],
+            [0, 7, 0, 3, 0, 0, 0, 1, 2],
+            [1, 2, 0, 0, 0, 7, 4, 0, 0],
+            [0, 4, 9, 2, 0, 6, 0, 0, 7]
+        ]
+
+    pygame.init()  # Inicjalizacja modułu pygame
     pygame_icon = pygame.image.load("icon.png")
     pygame.display.set_icon(pygame_icon)
 
+    dimension = 9
+    square = 3
+    cell_length = 500 // dimension
 
-    def get_mouse_position(pos):
-        nonlocal x, y
-        x = pos[0] // cell_length
-        if x > dimension - 1:
-            x = dimension - 1
-        elif x < 0:
-            x = 0
-        y = pos[1] // cell_length
-        if y > dimension - 1:
-            y = dimension - 1
-        elif y < 0:
-            y = 0
+    grid = create_grid()
+    x = y = 0
 
-    def highlight_cell():
-        for i in range(2):
-            pygame.draw.line(screen, (255, 0, 255), (x * cell_length - 3, (y + i) * cell_length),
-                             (x * cell_length + cell_length + 3, (y + i) * cell_length), 7)
-            pygame.draw.line(screen, (255, 0, 255), ((x + i) * cell_length, y * cell_length),
-                             ((x + i) * cell_length, y * cell_length + cell_length), 7)
+    screen = pygame.display.set_mode((500, 600))
+    pygame.display.set_caption("Sudoku")
+    fontNumbers = pygame.font.SysFont("arial", cell_length // 2)
+    fontInfo = pygame.font.SysFont("arial", 20)
 
     def draw_grids():
         for i in range(dimension):
@@ -82,8 +87,7 @@ def start_game():
                 screen.fill((255, 255, 255))
                 draw_grids()
                 highlight_cell()
-                if visualize:
-                    pygame.display.update()
+                pygame.display.update()
                 pygame.time.delay(1)
                 if solve(grid, i, j):
                     return True
@@ -92,9 +96,8 @@ def start_game():
                 screen.fill((255, 255, 255))
                 draw_grids()
                 highlight_cell()
-                if visualize:
-                    pygame.display.update()
-                    pygame.time.delay(50)
+                pygame.display.update()
+                pygame.time.delay(50)
         return False
 
     def instruction():
@@ -113,18 +116,6 @@ def start_game():
                 grid[i][j] = 0
         return grid
 
-    def create_grid():
-        return [
-            [7, 8, 0, 4, 0, 0, 1, 2, 0],
-            [6, 0, 0, 0, 7, 5, 0, 0, 9],
-            [0, 0, 0, 6, 0, 1, 0, 7, 8],
-            [0, 0, 7, 0, 4, 0, 2, 6, 0],
-            [0, 0, 1, 0, 5, 0, 9, 3, 0],
-            [9, 0, 4, 0, 6, 0, 0, 0, 5],
-            [0, 7, 0, 3, 0, 0, 0, 1, 2],
-            [1, 2, 0, 0, 0, 7, 4, 0, 0],
-            [0, 4, 9, 2, 0, 6, 0, 0, 7]
-        ]
 
     def randomize_grid(level):
         grid = [[0] * dimension for _ in range(dimension)]
@@ -151,21 +142,25 @@ def start_game():
             grid[x][y] = 0
         return grid
 
-    pygame.init()
+    def get_mouse_position(pos):
+        nonlocal x, y
+        x = pos[0] // cell_length
+        if x > dimension - 1:
+            x = dimension - 1
+        elif x < 0:
+            x = 0
+        y = pos[1] // cell_length
+        if y > dimension - 1:
+            y = dimension - 1
+        elif y < 0:
+            y = 0
 
-    dimension = 9
-    square = 3
-    cell_length = 500 // dimension
-    visualize = True
-
-    screen = pygame.display.set_mode((500, 600))
-    pygame.display.set_caption("Sudoku")
-    fontNumbers = pygame.font.SysFont("arial", cell_length // 2)
-    fontInfo = pygame.font.SysFont("arial", 20)
-
-    grid = create_grid()
-    x = y = 0
-
+    def highlight_cell():
+        for i in range(2):
+            pygame.draw.line(screen, (255, 0, 255), (x * cell_length - 3, (y + i) * cell_length),
+                             (x * cell_length + cell_length + 3, (y + i) * cell_length), 7)
+            pygame.draw.line(screen, (255, 0, 255), ((x + i) * cell_length, y * cell_length),
+                             ((x + i) * cell_length, y * cell_length + cell_length), 7)
 
     running = True
     while running:
@@ -255,6 +250,7 @@ def start_game():
 
     pygame.quit()
 
-
 if __name__ == "__main__":
     start_game()
+
+
