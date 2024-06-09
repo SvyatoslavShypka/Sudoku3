@@ -1,10 +1,15 @@
+import time
+
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout
-from PySide6.QtGui import QPixmap, QPainter, QColor, QFont, QMouseEvent
+from PySide6.QtGui import QPixmap, QPainter, QColor, QFont, QMouseEvent, QIcon, QPen
 from PySide6.QtCore import Qt, QTimer, QRect
 
 import random
 
 class LoginWindow(QWidget):
+    width = 600
+    height = 750
+
     def __init__(self):
         super().__init__()
         self.error_label = QLabel(self)
@@ -15,15 +20,8 @@ class LoginWindow(QWidget):
         QApplication.instance().quit()
 
     def setup(self):
-        width = 600
-        height = 750
 
         layout = QVBoxLayout()
-
-        pix_label = QLabel(self)
-        pixmap = QPixmap("icon.png").scaled(30, 30)
-        pix_label.setPixmap(pixmap)
-        layout.addWidget(pix_label)
 
         new_game_button = QPushButton("New game", self)
         new_game_button.clicked.connect(self.start_game)
@@ -40,7 +38,7 @@ class LoginWindow(QWidget):
 
         layout.addWidget(self.error_label)
 
-        self.setFixedSize(width, height)
+        self.setFixedSize(self.width, self.height)
         self.setWindowTitle("Sudoku Interface")
         self.show()
 
@@ -54,10 +52,14 @@ class LoginWindow(QWidget):
 class GameWidget(QWidget):
     square = 3
     dimension = square * square
+    side = LoginWindow.width - 60
+    cell_length = (side) // dimension
+    thick_line = 8
+    thin_line = 2
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(500, 500)
+        self.setFixedSize(self.side, self.side)
         self.grid = self.create_grid()
         self.key_count = 1
         self.x = self.y = 0
@@ -66,9 +68,42 @@ class GameWidget(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)  # Set focus policy to accept key events
         self.parent = parent
 
-    def create_grid(self):
+    def create_grid(self, level=0):
+        # create grid with zeros
         grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
+        x = y = 0
+        num = random.randint(1, self.dimension)
+        for i in range(self.dimension):
+            while not self.is_allowed_here(grid, x, y, num):
+                num = random.randint(1, self.dimension)
+            grid[x][y] = num
+            x += 1
+        self.solve(grid, 0, 0)
+        grid = self.leverage_grid(grid, level)
         return grid
+
+    def leverage_grid(self, grid, level):
+        # Adjust the grid by removing some numbers based on the level of difficulty
+        cells_to_remove = 20 + level * 5
+        for _ in range(cells_to_remove):
+            x = random.randint(0, self.dimension - 1)
+            y = random.randint(0, self.dimension - 1)
+            while grid[x][y] == 0:
+                x = random.randint(0, self.dimension - 1)
+                y = random.randint(0, self.dimension - 1)
+            grid[x][y] = 0
+        return grid
+
+    def is_allowed_here(self, m, i, j, num):
+        for it in range(self.dimension):
+            if m[i][it] == num or m[it][j] == num:
+                return False
+        it, jt = i // self.square, j // self.squar
+        for i in range(it * self.squar, it * self.squar + self.squar):
+            for j in range(jt * self.squar, jt * self.squar + self.squar):
+                if m[i][j] == num:
+                    return False
+        return True
 
     def start_game(self):
         self.grid = self.create_grid()
@@ -86,33 +121,36 @@ class GameWidget(QWidget):
         self.highlight_cell(painter)
 
     def draw_grids(self, painter):
-        cell_length = 500 // self.dimension
-        font = QFont("Arial", cell_length // 2)
+        font = QFont("Arial", self.cell_length // 2)
         painter.setFont(font)
         for i in range(self.dimension):
             for j in range(self.dimension):
                 if self.grid[i][j] != 0:
-                    rect = QRect(i * cell_length, j * cell_length, cell_length, cell_length)
+                    rect = QRect(i * self.cell_length, j * self.cell_length, self.cell_length, self.cell_length)
                     painter.fillRect(rect, QColor(0, 153, 153))
                     painter.drawText(rect, Qt.AlignCenter, str(self.grid[i][j]))
         for i in range(self.dimension + 1):
-            thick = 8 if i % 3 == 0 else 2
-            painter.setPen(QColor(0, 0, 0))
-            painter.drawLine(0, i * cell_length, 500, i * cell_length)
-            painter.drawLine(i * cell_length, 0, i * cell_length, 500)
+            thick = self.thick_line if i % self.square == 0 else self.thin_line
+            painter.setPen(QPen(QColor(0, 0, 0), thick))
+            # horisontal lines
+            y_pos = i * self.cell_length
+            painter.drawLine(0, y_pos, self.side, y_pos)
+            # vertical lines
+            x_pos = i * self.cell_length
+            painter.drawLine(x_pos, 0, x_pos, self.side)
 
     def highlight_cell(self, painter):
-        cell_length = 500 // 9
-        painter.setPen(QColor(255, 0, 255))
+        painter.setPen(QPen(QColor(255, 0, 255), self.thick_line))
         for i in range(2):
-            painter.drawLine(self.x * cell_length - 3, (self.y + i) * cell_length,
-                             self.x * cell_length + cell_length + 3, (self.y + i) * cell_length)
-            painter.drawLine((self.x + i) * cell_length, self.y * cell_length,
-                             (self.x + i) * cell_length, self.y * cell_length + cell_length)
+            # up_horizontal_line
+            painter.drawLine(self.x * self.cell_length, (self.y + i) * self.cell_length,
+                             self.x * self.cell_length + self.cell_length, (self.y + i) * self.cell_length)
+            painter.drawLine((self.x + i) * self.cell_length, self.y * self.cell_length,
+                             (self.x + i) * self.cell_length, self.y * self.cell_length + self.cell_length)
 
     def keyPressEvent(self, event):
-        print("self.key_count", self.key_count)
-        self.key_count += 1
+        # print("self.key_count", self.key_count)
+        # self.key_count += 1
         if event.key() == Qt.Key_Left:
             self.x = max(0, self.x - 1)
         elif event.key() == Qt.Key_Right:
@@ -137,14 +175,13 @@ class GameWidget(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
-            self.x = int(event.position().x() // (500 // 9))
-            self.y = int(event.position().y() // (500 // 9))
+            self.x = int(event.position().x() // (self.side // self.dimension))
+            self.y = int(event.position().y() // (self.side // self.dimension))
             self.update_game()
 
     def is_allowed_here(self, m, i, j, num):
-        dimension = 9
         square = 3
-        for it in range(dimension):
+        for it in range(self.dimension):
             if m[i][it] == num or m[it][j] == num:
                 return False
         it, jt = i // square, j // square
@@ -155,14 +192,13 @@ class GameWidget(QWidget):
         return True
 
     def solve(self, grid, i, j):
-        dimension = 9
         while grid[i][j] != 0:
-            if i < dimension - 1:
+            if i < self.dimension - 1:
                 i += 1
-            elif i == dimension - 1 and j < dimension - 1:
+            elif i == self.dimension - 1 and j < self.dimension - 1:
                 i = 0
                 j += 1
-            elif i == dimension - 1 and j == dimension - 1:
+            elif i == self.dimension - 1 and j == self.dimension - 1:
                 return True
         for it in range(1, 10):
             if self.is_allowed_here(grid, i, j, it):
@@ -179,6 +215,9 @@ class GameWidget(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
+    # Ustawianie ikonki aplikacji
+    app_icon = QIcon("icon.png")
+    app.setWindowIcon(app_icon)
 
     login_window = LoginWindow()
 
