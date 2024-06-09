@@ -67,6 +67,7 @@ class GameWidget(QWidget):
         self.timer.timeout.connect(self.update_game)
         self.setFocusPolicy(Qt.StrongFocus)  # Set focus policy to accept key events
         self.parent = parent
+        self.delay = 100  # Dodaj ten atrybut delay
 
     def create_grid(self, level=0):
         # create grid with zeros
@@ -149,8 +150,6 @@ class GameWidget(QWidget):
                              (self.x + i) * self.cell_length, self.y * self.cell_length + self.cell_length)
 
     def keyPressEvent(self, event):
-        # print("self.key_count", self.key_count)
-        # self.key_count += 1
         if event.key() == Qt.Key_Left:
             self.x = max(0, self.x - 1)
         elif event.key() == Qt.Key_Right:
@@ -167,11 +166,41 @@ class GameWidget(QWidget):
             else:
                 self.parent.error_label.setText("Invalid move")
         elif event.key() == Qt.Key_Return:
-            if self.solve(self.grid, 0, 0):
-                self.parent.error_label.setText("Solved!")
-            else:
-                self.parent.error_label.setText("No solution")
+            self.solve_with_delay(self.grid, 0, 0)  # Rozpoczęcie wizualizacji algorytmu śledzenia wstecznego
         self.update_game()
+
+    def solve_with_delay(self, grid, i, j):
+        def step():
+            nonlocal i, j
+            if i == self.dimension:
+                # Zakończono wypełnianie planszy, zakończ funkcję
+                self.timer.stop()
+                return
+            if j == self.dimension:
+                # Przejdź do następnego wiersza
+                i += 1
+                j = 0
+            # Sprawdź czy komórka jest pusta
+            if i < self.dimension:
+                if grid[i][j] == 0:
+                    for val in range(1, self.dimension + 1):
+                        if self.is_allowed_here(grid, i, j, val):
+                            grid[i][j] = val
+                            self.x, self.y = i, j
+                            self.update_game()
+                            QTimer.singleShot(self.delay, step)
+                            return
+                    # Nie znaleziono odpowiedniej wartości, cofnij się
+                    grid[i][j] = 0
+                    self.update_game()
+                    QTimer.singleShot(self.delay, step)
+                else:
+                    # Przejdź do następnej komórki
+                    j += 1
+                    QTimer.singleShot(self.delay, step)
+
+        # Uruchomienie pierwszego kroku
+        QTimer.singleShot(self.delay, step)
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
