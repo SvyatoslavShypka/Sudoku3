@@ -166,41 +166,42 @@ class GameWidget(QWidget):
             else:
                 self.parent.error_label.setText("Invalid move")
         elif event.key() == Qt.Key_Return:
-            self.solve_with_delay(self.grid, 0, 0)  # Rozpoczęcie wizualizacji algorytmu śledzenia wstecznego
+            self.solve_with_delay(self.grid, 0, 0)
+            print("Finished")
         self.update_game()
 
     def solve_with_delay(self, grid, i, j):
-        def step():
-            nonlocal i, j
-            if i == self.dimension:
-                # Zakończono wypełnianie planszy, zakończ funkcję
-                self.timer.stop()
-                return
-            if j == self.dimension:
-                # Przejdź do następnego wiersza
-                i += 1
-                j = 0
-            # Sprawdź czy komórka jest pusta
-            if i < self.dimension:
-                if grid[i][j] == 0:
-                    for val in range(1, self.dimension + 1):
-                        if self.is_allowed_here(grid, i, j, val):
-                            grid[i][j] = val
-                            self.x, self.y = i, j
-                            self.update_game()
-                            QTimer.singleShot(self.delay, step)
-                            return
-                    # Nie znaleziono odpowiedniej wartości, cofnij się
-                    grid[i][j] = 0
-                    self.update_game()
-                    QTimer.singleShot(self.delay, step)
-                else:
-                    # Przejdź do następnej komórki
-                    j += 1
-                    QTimer.singleShot(self.delay, step)
+        self.solve_grid = grid
+        self.solve_i = i
+        self.solve_j = j
+        self.solve_timer = QTimer()
+        self.solve_timer.timeout.connect(self.step)
+        self.solve_timer.start(self.delay)
 
-        # Uruchomienie pierwszego kroku
-        QTimer.singleShot(self.delay, step)
+    def step(self):
+        if self.solve_i == self.dimension:
+            # Zakończono wypełnianie planszy, zakończ funkcję
+            self.solve_timer.stop()
+            return
+        if self.solve_j == self.dimension:
+            # Przejdź do następnego wiersza
+            self.solve_i += 1
+            self.solve_j = 0
+        # Sprawdź czy komórka jest pusta
+        if self.solve_i < self.dimension:
+            if self.solve_grid[self.solve_i][self.solve_j] == 0:
+                for val in range(1, self.dimension + 1):
+                    if self.is_allowed_here(self.solve_grid, self.solve_i, self.solve_j, val):
+                        self.solve_grid[self.solve_i][self.solve_j] = val
+                        self.x, self.y = self.solve_i, self.solve_j
+                        self.update_game()
+                        return
+                # Nie znaleziono odpowiedniej wartości, cofnij się
+                self.solve_grid[self.solve_i][self.solve_j] = 0
+                self.update_game()
+            # Przejdź do następnej komórki
+            self.solve_j += 1
+        self.solve_timer.start(self.delay)
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
