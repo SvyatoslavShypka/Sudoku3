@@ -173,6 +173,7 @@ class GameWidget(QWidget):
         self.parent = parent
         self.delay = 100  # Dodaj ten atrybut delay
         self.solve_thread = None
+        self.left_cells = self.dimension * self.dimension
 
     def save_game(self, file_name):
         game_state = self.serialize_game_state()
@@ -199,6 +200,7 @@ class GameWidget(QWidget):
             'x': self.x,
             'y': self.y,
             'key_count': self.key_count,
+            'left_cells': self.left_cells,
             # Dodaj inne parametry gry do serializacji
         }
         return game_state
@@ -209,6 +211,7 @@ class GameWidget(QWidget):
         self.x = game_state['x']
         self.y = game_state['y']
         self.key_count = game_state['key_count']
+        self.left_cells = game_state['left_cells']
 
     def create_grid(self, level=2):
         # create grid with zeros
@@ -221,13 +224,15 @@ class GameWidget(QWidget):
             grid[x][y] = num
             x += 1
         self.solve(grid, 0, 0)
-        grid = self.leverage_grid(grid, level)
+        grid, count_zeros = self.leverage_grid(grid, level)
+        self.left_cells = count_zeros
         self.begin_grid = self.get_copy_from_grid(grid)
         return grid
 
     def leverage_grid(self, grid, level):
         # Adjust the grid by removing some numbers based on the level of difficulty
         cells_to_remove = int(self.dimension * self.dimension * level / 4)
+        count_zeros = 0
         for _ in range(cells_to_remove):
             x = random.randint(0, self.dimension - 1)
             y = random.randint(0, self.dimension - 1)
@@ -235,7 +240,8 @@ class GameWidget(QWidget):
                 x = random.randint(0, self.dimension - 1)
                 y = random.randint(0, self.dimension - 1)
             grid[x][y] = 0
-        return grid
+            count_zeros += 1
+        return grid, count_zeros
 
     def is_allowed_here(self, m, i, j, num):
         for it in range(self.dimension):
@@ -317,18 +323,18 @@ class GameWidget(QWidget):
         elif event.key() == Qt.Key_Delete or event.key() == Qt.Key_Backspace:
             if not self.is_starting_position(self.x, self.y):
                 self.grid[self.x][self.y] = 0
+                self.left_cells += 1
         elif Qt.Key_1 <= event.key() <= Qt.Key_9:
             num = event.key() - Qt.Key_0
             if not self.is_starting_position(self.x, self.y):
                 if self.is_allowed_here(self.grid, self.x, self.y, num):
                     self.grid[self.x][self.y] = num
+                    self.left_cells -= 1
                     self.parent.error_label.clear()  # Clear the error message if the move is valid
                 else:
                     self.parent.error_label.setText("Invalid move")
         elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            print("1: ", self.grid)
             if self.solve(self.grid, 0, 0):
-                print("2: ", self.grid)
                 self.key_count = 0
                 if self.solve_thread is None or not self.solve_thread.is_alive():
                     self.solve_thread = GameSolverThread(self)
@@ -338,7 +344,11 @@ class GameWidget(QWidget):
             else:
                 self.parent.error_label.setText("No solution found")
             self.parent.error_label.setText("PRESS R TO RESTART GAME")
-            self.update_game()
+            self.left_cells = 0
+        if self.left_cells == 0:
+            self.parent.error_label.setText("Gratulation!!! You solved the task.")
+
+        self.update_game()
 
     def solve_with_delay(self):
         grid = self.grid
@@ -355,12 +365,14 @@ class GameWidget(QWidget):
                         for val in range(1, dimension + 1):
                             if self.is_allowed_here(grid, i, j, val):
                                 grid[i][j] = val
+                                self.left_cells -= 1
                                 self.x, self.y = i, j
                                 self.update_game()
                                 # time.sleep(0.00005)  # Dodaj krótkie opóźnienie
                                 if solve_sudoku():
                                     return True
                                 grid[i][j] = 0
+                                self.left_cells += 1
                                 self.update_game()
                         return False
             return True
