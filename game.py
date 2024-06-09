@@ -1,4 +1,5 @@
 import time
+import threading
 
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout
 from PySide6.QtGui import QPixmap, QPainter, QColor, QFont, QMouseEvent, QIcon, QPen
@@ -46,7 +47,16 @@ class LoginWindow(QWidget):
         self.error_label.clear()  # Clear any previous error messages
         self.game_display.start_game()
         self.game_display.setVisible(True)  # Show the game display
-        self.game_display.setFocus()  # Give focus to the GameWidget
+        self.game_display.setFocus()  # Give focus to the GameWidget after starting the game
+
+
+class GameSolverThread(threading.Thread):
+    def __init__(self, game_widget):
+        super().__init__()
+        self.game_widget = game_widget
+
+    def run(self):
+        self.game_widget.solve_with_delay()
 
 
 class GameWidget(QWidget):
@@ -60,7 +70,8 @@ class GameWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedSize(self.side, self.side)
-        self.grid = self.create_grid()
+        # self.grid = self.create_grid()
+        self.grid = None
         self.key_count = 1
         self.x = self.y = 0
         self.timer = QTimer()
@@ -68,19 +79,34 @@ class GameWidget(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)  # Set focus policy to accept key events
         self.parent = parent
         self.delay = 100  # Dodaj ten atrybut delay
+        self.solve_thread = None
 
     def create_grid(self, level=0):
         # create grid with zeros
-        grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
-        x = y = 0
-        num = random.randint(1, self.dimension)
-        for i in range(self.dimension):
-            while not self.is_allowed_here(grid, x, y, num):
-                num = random.randint(1, self.dimension)
-            grid[x][y] = num
-            x += 1
-        self.solve(grid, 0, 0)
-        grid = self.leverage_grid(grid, level)
+        # grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
+        # x = y = 0
+        # num = random.randint(1, self.dimension)
+        # for i in range(self.dimension):
+        #     while not self.is_allowed_here(grid, x, y, num):
+        #         num = random.randint(1, self.dimension)
+        #     grid[x][y] = num
+        #     x += 1
+        grid = [[0, 0, 0, 2, 0, 0, 4, 0, 0],
+                [0, 0, 7, 1, 0, 0, 0, 0, 0],
+                [0, 3, 0, 0, 0, 0, 1, 7, 0],
+                [8, 0, 0, 0, 0, 5, 0, 9, 0],
+                [0, 5, 0, 0, 9, 0, 0, 2, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 5, 0],
+                [0, 8, 0, 9, 0, 0, 0, 0, 0],
+                [1, 0, 5, 8, 0, 3, 0, 4, 0]
+                ]
+
+        print("grid przed solve: ", grid)
+        # print(self.solve(grid, 0, 0))
+        print("grid po solve: ", grid)
+        # grid = self.leverage_grid(grid, level)
+        # print("grid po leverage: ", grid)
         return grid
 
     def leverage_grid(self, grid, level):
@@ -99,15 +125,15 @@ class GameWidget(QWidget):
         for it in range(self.dimension):
             if m[i][it] == num or m[it][j] == num:
                 return False
-        it, jt = i // self.square, j // self.squar
-        for i in range(it * self.squar, it * self.squar + self.squar):
-            for j in range(jt * self.squar, jt * self.squar + self.squar):
+        it, jt = i // self.square, j // self.square
+        for i in range(it * self.square, it * self.square + self.square):
+            for j in range(jt * self.square, jt * self.square + self.square):
                 if m[i][j] == num:
                     return False
         return True
 
     def start_game(self):
-        self.grid = self.create_grid()
+        self.grid = self.create_grid(8)
         self.x = self.y = 0
         self.update_game()
         self.timer.start(1000 // 60)  # 60 FPS
@@ -166,42 +192,37 @@ class GameWidget(QWidget):
             else:
                 self.parent.error_label.setText("Invalid move")
         elif event.key() == Qt.Key_Return:
-            self.solve_with_delay(self.grid, 0, 0)
-            print("Finished")
+            if self.solve_thread is None or not self.solve_thread.is_alive():
+                self.solve_thread = GameSolverThread(self)
+                self.solve_thread.start()
+            else:
+                self.parent.error_label.setText("Solving already in progress")
         self.update_game()
 
-    def solve_with_delay(self, grid, i, j):
-        self.solve_grid = grid
-        self.solve_i = i
-        self.solve_j = j
-        self.solve_timer = QTimer()
-        self.solve_timer.timeout.connect(self.step)
-        self.solve_timer.start(self.delay)
+    def solve_with_delay(self):
+        grid = self.grid
+        dimension = self.dimension
 
-    def step(self):
-        if self.solve_i == self.dimension:
-            # Zakończono wypełnianie planszy, zakończ funkcję
-            self.solve_timer.stop()
-            return
-        if self.solve_j == self.dimension:
-            # Przejdź do następnego wiersza
-            self.solve_i += 1
-            self.solve_j = 0
-        # Sprawdź czy komórka jest pusta
-        if self.solve_i < self.dimension:
-            if self.solve_grid[self.solve_i][self.solve_j] == 0:
-                for val in range(1, self.dimension + 1):
-                    if self.is_allowed_here(self.solve_grid, self.solve_i, self.solve_j, val):
-                        self.solve_grid[self.solve_i][self.solve_j] = val
-                        self.x, self.y = self.solve_i, self.solve_j
-                        self.update_game()
-                        return
-                # Nie znaleziono odpowiedniej wartości, cofnij się
-                self.solve_grid[self.solve_i][self.solve_j] = 0
-                self.update_game()
-            # Przejdź do następnej komórki
-            self.solve_j += 1
-        self.solve_timer.start(self.delay)
+        def solve_sudoku():
+            for i in range(dimension):
+                for j in range(dimension):
+                    if grid[i][j] == 0:
+                        for val in range(1, dimension + 1):
+                            if self.is_allowed_here(grid, i, j, val):
+                                grid[i][j] = val
+                                self.x, self.y = i, j
+                                self.update_game()
+                                time.sleep(0.00005)  # Dodaj krótkie opóźnienie
+                                if solve_sudoku():
+                                    return True
+                                grid[i][j] = 0
+                                self.update_game()
+                        return False
+            return True
+        if solve_sudoku():
+            self.parent.error_label.setText("Sudoku solved!")
+        else:
+            self.parent.error_label.setText("No solution found")
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
@@ -222,6 +243,7 @@ class GameWidget(QWidget):
         return True
 
     def solve(self, grid, i, j):
+        # grid = self.copy_grid(origin_grid)
         while grid[i][j] != 0:
             if i < self.dimension - 1:
                 i += 1
@@ -242,6 +264,14 @@ class GameWidget(QWidget):
                 self.update_game()
         return False
 
+    def get_copy_grid(self, origin_grid):
+        # create grid with zeros
+        copy_grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
+        for i in range(len(copy_grid)):
+            for j in range(len(copy_grid[0])):
+                copy_grid[i][j] = origin_grid[i][j]
+        return copy_grid
+
 
 if __name__ == '__main__':
     app = QApplication([])
@@ -252,3 +282,4 @@ if __name__ == '__main__':
     login_window = LoginWindow()
 
     app.exec()
+
