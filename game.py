@@ -106,7 +106,7 @@ class GameWidget(QWidget):
         print(self.solve(grid, 0, 0))
         print("grid po solve: ", grid)
         grid = self.leverage_grid(grid, level)
-        self.begin_grid = self.get_copy_grid(grid)
+        self.begin_grid = self.get_copy_from_grid(grid)
         print("grid po leverage: ", grid)
         print("begin_grid: ", self.begin_grid)
         return grid
@@ -195,7 +195,10 @@ class GameWidget(QWidget):
             self.y = max(0, self.y - 1)
         elif event.key() == Qt.Key_Down:
             self.y = min(8, self.y + 1)
-        elif event.key() == Qt.Key_Delete:
+        elif event.key() == Qt.Key_R:
+            self.grid = self.get_copy_from_grid(self.begin_grid)
+            self.update_game()
+        elif event.key() == Qt.Key_Delete or event.key() == Qt.Key_Backspace:
             if not self.is_starting_position(self.x, self.y):
                 self.grid[self.x][self.y] = 0
         elif Qt.Key_1 <= event.key() <= Qt.Key_9:
@@ -206,7 +209,7 @@ class GameWidget(QWidget):
                     self.parent.error_label.clear()  # Clear the error message if the move is valid
                 else:
                     self.parent.error_label.setText("Invalid move")
-        elif event.key() == Qt.Key_Return:
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             print("1: ", self.grid)
             if self.solve(self.grid, 0, 0):
                 print("2: ", self.grid)
@@ -268,7 +271,6 @@ class GameWidget(QWidget):
         return True
 
     def solve(self, grid, i, j):
-        # grid = self.copy_grid(origin_grid)
         while grid[i][j] != 0:
             if i < self.dimension - 1:
                 i += 1
@@ -289,7 +291,7 @@ class GameWidget(QWidget):
                 self.update_game()
         return False
 
-    def get_copy_grid(self, origin_grid):
+    def get_copy_from_grid(self, origin_grid):
         # create grid with zeros
         copy_grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
         for i in range(len(copy_grid)):
@@ -301,7 +303,7 @@ class GameWidget(QWidget):
 if __name__ == '__main__':
     app = QApplication([])
     # Ustawianie ikonki aplikacji
-    app_icon = QIcon("icon.png")
+    app_icon = QIcon("icon.ico")
     app.setWindowIcon(app_icon)
 
     login_window = LoginWindow()
