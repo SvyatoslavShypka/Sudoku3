@@ -133,8 +133,8 @@ class LoginWindow(QWidget):
         suggested_filename = self.last_saved_filename if self.last_saved_filename else "default_filename.json"
 
         # Open a file dialog to select the file to load
-        filename, _ = QFileDialog.getOpenFileName(self, "Load game", "", "JSON Files (*.json);;All Files (*)",
-                                                  suggested_filename)
+        filename, _ = QFileDialog.getOpenFileName(self, "Load game", suggested_filename,
+                                                  "JSON Files (*.json);;All Files (*)")
 
         if filename:
             # Load the selected file
@@ -175,10 +175,7 @@ class GameWidget(QWidget):
         self.solve_thread = None
 
     def save_game(self, file_name):
-        game_state = {
-            'begin_grid': self.begin_grid,
-            'grid': self.grid
-        }
+        game_state = self.serialize_game_state()
         with open(file_name, 'w') as file:
             json.dump(game_state, file)
         self.parent.error_label.setText("Game saved successfully into file " + file_name)
@@ -187,14 +184,31 @@ class GameWidget(QWidget):
         try:
             with open(file_name, 'r') as file:
                 game_state = json.load(file)
-            self.begin_grid = game_state['begin_grid']
-            self.grid = game_state['grid']
+            self.deserialize_game_state(game_state)
             self.update_game()
             self.parent.error_label.setText("Game loaded successfully")
         except FileNotFoundError:
             self.parent.error_label.setText("No saved game found")
         except json.JSONDecodeError:
             self.parent.error_label.setText("Error loading saved game")
+
+    def serialize_game_state(self):
+        game_state = {
+            'grid': self.grid,
+            'begin_grid': self.begin_grid,
+            'x': self.x,
+            'y': self.y,
+            'key_count': self.key_count,
+            # Dodaj inne parametry gry do serializacji
+        }
+        return game_state
+
+    def deserialize_game_state(self, game_state):
+        self.grid = game_state['grid']
+        self.begin_grid = game_state['begin_grid']
+        self.x = game_state['x']
+        self.y = game_state['y']
+        self.key_count = game_state['key_count']
 
     def create_grid(self, level=2):
         # create grid with zeros
