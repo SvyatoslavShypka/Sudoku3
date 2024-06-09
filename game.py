@@ -4,12 +4,12 @@ import threading
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout
 from PySide6.QtGui import QPixmap, QPainter, QColor, QFont, QMouseEvent, QIcon, QPen
 from PySide6.QtCore import Qt, QTimer, QRect
-
 import random
 
+
 class LoginWindow(QWidget):
-    width = 600
-    height = 750
+    window_width = 1000
+    window_height = 800
 
     def __init__(self):
         super().__init__()
@@ -39,8 +39,8 @@ class LoginWindow(QWidget):
 
         layout.addWidget(self.error_label)
 
-        self.setFixedSize(self.width, self.height)
-        self.setWindowTitle("Sudoku Interface")
+        self.setFixedSize(self.window_width, self.window_height)
+        self.setWindowTitle("Sudoku")
         self.show()
 
     def start_game(self):
@@ -62,8 +62,8 @@ class GameSolverThread(threading.Thread):
 class GameWidget(QWidget):
     square = 3
     dimension = square * square
-    side = LoginWindow.width - 60
-    cell_length = (side) // dimension
+    side = LoginWindow.window_width - 400
+    cell_length = side // dimension
     thick_line = 8
     thin_line = 2
 
@@ -134,8 +134,8 @@ class GameWidget(QWidget):
                     return False
         return True
 
-    def start_game(self):
-        self.grid = self.create_grid(2)
+    def start_game(self, level=2):
+        self.grid = self.create_grid(level)
         self.x = self.y = 0
         self.update_game()
         self.timer.start(1000 // 60)  # 60 FPS
@@ -165,14 +165,16 @@ class GameWidget(QWidget):
                         painter.fillRect(rect, QColor(0, 153, 153))
                         painter.drawText(rect, Qt.AlignCenter, str(self.grid[i][j]))
         for i in range(self.dimension + 1):
-            thick = self.thick_line if i % self.square == 0 else self.thin_line
-            painter.setPen(QPen(QColor(0, 0, 0), thick))
+            thickness = self.thick_line if i % self.square == 0 else self.thin_line
+            if i == 0:
+                thickness = 2 * thickness
+            painter.setPen(QPen(QColor(0, 0, 0), thickness))
             # horisontal lines
             y_pos = i * self.cell_length
-            painter.drawLine(0, y_pos, self.side, y_pos)
+            painter.drawLine(0, y_pos, self.side - thickness - 1, y_pos)
             # vertical lines
             x_pos = i * self.cell_length
-            painter.drawLine(x_pos, 0, x_pos, self.side)
+            painter.drawLine(x_pos, 0, x_pos, self.side - self.thick_line - 2)
 
     def is_starting_position(self, i, j):
         return self.begin_grid[i][j] != 0
@@ -221,6 +223,7 @@ class GameWidget(QWidget):
                     self.parent.error_label.setText("Solving already in progress")
             else:
                 self.parent.error_label.setText("No solution found")
+            self.parent.error_label.setText("PRESS R TO RESTART GAME")
             self.update_game()
 
     def solve_with_delay(self):
@@ -298,6 +301,10 @@ class GameWidget(QWidget):
             for j in range(len(copy_grid[0])):
                 copy_grid[i][j] = origin_grid[i][j]
         return copy_grid
+
+    def instruction(self):
+        self.parent.error_label.setText("PRESS R TO RESTART GAME")
+
 
 
 if __name__ == '__main__':
