@@ -6,8 +6,15 @@ import sudoku_game
 class LoginWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.game_process = None  # Inicjalizacja atrybutu game_process
         self.setup()
-    #     test
+
+    def quit_app(self):
+        # Zamknij proces gry, jeśli jest aktywny
+        if self.game_process and self.game_process.is_alive():
+            self.game_process.terminate()
+        # Zakończ główną aplikację
+        QApplication.instance().quit()
 
     def setup(self):
         width = 1000
