@@ -70,8 +70,8 @@ class GameWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedSize(self.side, self.side)
-        # self.grid = self.create_grid()
         self.grid = None
+        self.begin_grid = None
         self.key_count = 1
         self.x = self.y = 0
         self.timer = QTimer()
@@ -81,37 +81,39 @@ class GameWidget(QWidget):
         self.delay = 100  # Dodaj ten atrybut delay
         self.solve_thread = None
 
-    def create_grid(self, level=0):
+    def create_grid(self, level=2):
         # create grid with zeros
-        # grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
-        # x = y = 0
-        # num = random.randint(1, self.dimension)
-        # for i in range(self.dimension):
-        #     while not self.is_allowed_here(grid, x, y, num):
-        #         num = random.randint(1, self.dimension)
-        #     grid[x][y] = num
-        #     x += 1
-        grid = [[0, 0, 0, 2, 0, 0, 4, 0, 0],
-                [0, 0, 7, 1, 0, 0, 0, 0, 0],
-                [0, 3, 0, 0, 0, 0, 1, 7, 0],
-                [8, 0, 0, 0, 0, 5, 0, 9, 0],
-                [0, 5, 0, 0, 9, 0, 0, 2, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 5, 0],
-                [0, 8, 0, 9, 0, 0, 0, 0, 0],
-                [1, 0, 5, 8, 0, 3, 0, 4, 0]
-                ]
+        grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
+        x = y = 0
+        num = random.randint(1, self.dimension)
+        for i in range(self.dimension):
+            while not self.is_allowed_here(grid, x, y, num):
+                num = random.randint(1, self.dimension)
+            grid[x][y] = num
+            x += 1
+        # grid = [[5, 0, 0, 2, 0, 0, 4, 0, 0],
+        #         [0, 0, 7, 1, 0, 0, 0, 0, 0],
+        #         [0, 3, 0, 0, 0, 0, 1, 7, 0],
+        #         [8, 0, 0, 0, 0, 5, 0, 9, 0],
+        #         [0, 5, 0, 0, 9, 0, 0, 2, 0],
+        #         [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #         [0, 0, 0, 0, 0, 0, 0, 5, 0],
+        #         [0, 8, 0, 9, 0, 0, 0, 0, 0],
+        #         [1, 0, 5, 8, 0, 3, 0, 4, 0]
+        #         ]
 
         print("grid przed solve: ", grid)
-        # print(self.solve(grid, 0, 0))
+        print(self.solve(grid, 0, 0))
         print("grid po solve: ", grid)
-        # grid = self.leverage_grid(grid, level)
-        # print("grid po leverage: ", grid)
+        grid = self.leverage_grid(grid, level)
+        self.begin_grid = self.get_copy_grid(grid)
+        print("grid po leverage: ", grid)
+        print("begin_grid: ", self.begin_grid)
         return grid
 
     def leverage_grid(self, grid, level):
         # Adjust the grid by removing some numbers based on the level of difficulty
-        cells_to_remove = 20 + level * 5
+        cells_to_remove = int(self.dimension * self.dimension * level / 4)
         for _ in range(cells_to_remove):
             x = random.randint(0, self.dimension - 1)
             y = random.randint(0, self.dimension - 1)
@@ -133,7 +135,7 @@ class GameWidget(QWidget):
         return True
 
     def start_game(self):
-        self.grid = self.create_grid(8)
+        self.grid = self.create_grid(2)
         self.x = self.y = 0
         self.update_game()
         self.timer.start(1000 // 60)  # 60 FPS
@@ -154,8 +156,14 @@ class GameWidget(QWidget):
             for j in range(self.dimension):
                 if self.grid[i][j] != 0:
                     rect = QRect(i * self.cell_length, j * self.cell_length, self.cell_length, self.cell_length)
-                    painter.fillRect(rect, QColor(0, 153, 153))
-                    painter.drawText(rect, Qt.AlignCenter, str(self.grid[i][j]))
+                    if self.is_starting_position(i, j):
+                        # color of the starting cells
+                        painter.fillRect(rect, QColor(0, 153, 0))
+                        painter.drawText(rect, Qt.AlignCenter, str(self.grid[i][j]))
+                    else:
+                        # color of other cells
+                        painter.fillRect(rect, QColor(0, 153, 153))
+                        painter.drawText(rect, Qt.AlignCenter, str(self.grid[i][j]))
         for i in range(self.dimension + 1):
             thick = self.thick_line if i % self.square == 0 else self.thin_line
             painter.setPen(QPen(QColor(0, 0, 0), thick))
@@ -165,6 +173,9 @@ class GameWidget(QWidget):
             # vertical lines
             x_pos = i * self.cell_length
             painter.drawLine(x_pos, 0, x_pos, self.side)
+
+    def is_starting_position(self, i, j):
+        return self.begin_grid[i][j] != 0
 
     def highlight_cell(self, painter):
         painter.setPen(QPen(QColor(255, 0, 255), self.thick_line))
@@ -184,26 +195,40 @@ class GameWidget(QWidget):
             self.y = max(0, self.y - 1)
         elif event.key() == Qt.Key_Down:
             self.y = min(8, self.y + 1)
+        elif event.key() == Qt.Key_Delete:
+            if not self.is_starting_position(self.x, self.y):
+                self.grid[self.x][self.y] = 0
         elif Qt.Key_1 <= event.key() <= Qt.Key_9:
             num = event.key() - Qt.Key_0
-            if self.is_allowed_here(self.grid, self.x, self.y, num):
-                self.grid[self.x][self.y] = num
-                self.parent.error_label.clear()  # Clear the error message if the move is valid
-            else:
-                self.parent.error_label.setText("Invalid move")
+            if not self.is_starting_position(self.x, self.y):
+                if self.is_allowed_here(self.grid, self.x, self.y, num):
+                    self.grid[self.x][self.y] = num
+                    self.parent.error_label.clear()  # Clear the error message if the move is valid
+                else:
+                    self.parent.error_label.setText("Invalid move")
         elif event.key() == Qt.Key_Return:
-            if self.solve_thread is None or not self.solve_thread.is_alive():
-                self.solve_thread = GameSolverThread(self)
-                self.solve_thread.start()
+            print("1: ", self.grid)
+            if self.solve(self.grid, 0, 0):
+                print("2: ", self.grid)
+                self.key_count = 0
+                if self.solve_thread is None or not self.solve_thread.is_alive():
+                    self.solve_thread = GameSolverThread(self)
+                    self.solve_thread.start()
+                else:
+                    self.parent.error_label.setText("Solving already in progress")
             else:
-                self.parent.error_label.setText("Solving already in progress")
-        self.update_game()
+                self.parent.error_label.setText("No solution found")
+            self.update_game()
 
     def solve_with_delay(self):
         grid = self.grid
         dimension = self.dimension
 
         def solve_sudoku():
+            print("iteration: ", self.key_count)
+            self.key_count += 1
+            if self.key_count > 100000:
+                return False
             for i in range(dimension):
                 for j in range(dimension):
                     if grid[i][j] == 0:
@@ -212,7 +237,7 @@ class GameWidget(QWidget):
                                 grid[i][j] = val
                                 self.x, self.y = i, j
                                 self.update_game()
-                                time.sleep(0.00005)  # Dodaj krótkie opóźnienie
+                                # time.sleep(0.00005)  # Dodaj krótkie opóźnienie
                                 if solve_sudoku():
                                     return True
                                 grid[i][j] = 0
@@ -221,8 +246,8 @@ class GameWidget(QWidget):
             return True
         if solve_sudoku():
             self.parent.error_label.setText("Sudoku solved!")
-        else:
-            self.parent.error_label.setText("No solution found")
+        # else:
+        #     self.parent.error_label.setText("No solution found")
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
