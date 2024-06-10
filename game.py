@@ -135,10 +135,10 @@ class LoginWindow(QWidget):
         # Open a file dialog to select the file to load
         filename, _ = QFileDialog.getOpenFileName(self, "Load game", suggested_filename,
                                                   "JSON Files (*.json);;All Files (*)")
-
         if filename:
             # Load the selected file
             self.game_display.load_game(filename)
+            self.save_game_button.setEnabled(True)  # Enable the save game button
             self.game_display.setVisible(True)  # Show the game display
             self.game_display.setFocus()  # Give focus to the GameWidget after starting the game
 
@@ -355,10 +355,10 @@ class GameWidget(QWidget):
         dimension = self.dimension
 
         def solve_sudoku():
-            print("iteration: ", self.key_count)
-            self.key_count += 1
-            if self.key_count > 100000:
-                return False
+            # print("iteration: ", self.key_count)
+            # self.key_count += 1
+            # if self.key_count > 100000:
+            #     return False
             for i in range(dimension):
                 for j in range(dimension):
                     if grid[i][j] == 0:
@@ -378,8 +378,6 @@ class GameWidget(QWidget):
             return True
         if solve_sudoku():
             self.parent.error_label.setText("Sudoku solved!")
-        # else:
-        #     self.parent.error_label.setText("No solution found")
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
@@ -427,10 +425,6 @@ class GameWidget(QWidget):
             for j in range(len(copy_grid[0])):
                 copy_grid[i][j] = origin_grid[i][j]
         return copy_grid
-
-    def instruction(self):
-        self.parent.error_label.setText("PRESS R TO RESTART GAME")
-
 
 
 if __name__ == '__main__':
