@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime
 from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, \
     QHBoxLayout, QMessageBox, QInputDialog, QFileDialog, QSlider
@@ -24,9 +23,9 @@ class LoginWindow(QWidget):
         self.save_game_button = None
         self.load_game_button = None
         self.exit_button = None
+        self.slider = None  # Przycisk przesuwny
         self.last_saved_filename = None
         self.load_config()
-        self.difficulty_slider = None
         self.setup()
 
     def save_config(self):
@@ -80,28 +79,15 @@ class LoginWindow(QWidget):
         self.exit_button.clicked.connect(self.exit_app)
         left_layout.addWidget(self.exit_button)
 
-        self.difficulty_slider = QSlider(Qt.Horizontal, self)  # Tworzenie slidera
-        self.difficulty_slider.setMinimum(1)  # Minimalna wartość
-        self.difficulty_slider.setMaximum(3)  # Maksymalna wartość
-        self.difficulty_slider.setValue(1)  # Domyślna wartość
-        self.difficulty_slider.setTickInterval(1)  # Odstęp między tickami
-        self.difficulty_slider.setTickPosition(QSlider.TicksBelow)
-        # # Ustawianie fiksowanego rozmiaru dla slidera
-        # Ustawianie fiksowanego rozmiaru dla slidera
-        self.difficulty_slider.setFixedWidth(200)
-        self.difficulty_slider.setFixedHeight(20)
-
-        # Dodawanie tytułu do slidera
-        slider_title = QLabel("Difficulty Level", self)
-        slider_title.setAlignment(Qt.AlignCenter)
-
-        # Dodawanie znaczeń cyfrowych
-        self.slider_value_label = QLabel(f"Current Value: {self.difficulty_slider.value()}", self)
-        self.slider_value_label.setAlignment(Qt.AlignCenter)
-
-        # Aktualizacja wartości cyfrowej przy zmianie slidera
-        self.difficulty_slider.valueChanged.connect(self.update_difficulty)  # Połączenie sygnału
-        self.difficulty_slider.valueChanged.connect(lambda value: self.slider_value_label.setText(f"Current Value: {value}"))
+        # Dodanie przycisku przesuwnego
+        self.slider = QSlider(Qt.Horizontal, self)
+        self.slider.setRange(1, 5)  # Zakres wartości slidera (1 do 5)
+        self.slider.setValue(2)  # Domyślna wartość
+        self.slider.setTickPosition(QSlider.TicksBelow)
+        self.slider.setTickInterval(1)
+        self.slider.valueChanged.connect(self.change_difficulty)  # Podłącz funkcję do zmiany wartości slidera
+        left_layout.addWidget(QLabel("Select Difficulty:"))
+        left_layout.addWidget(self.slider)
 
         self.instructions_label.setText(
             "Instructions:\n"
@@ -114,15 +100,10 @@ class LoginWindow(QWidget):
         self.instructions_label.setStyleSheet("QLabel { font-size: 16px; }")
         left_layout.addWidget(self.instructions_label)
 
-        left_layout.addWidget(slider_title)
-        left_layout.addWidget(self.difficulty_slider)
-        left_layout.addWidget(self.slider_value_label)
         left_layout.addWidget(self.error_label)
         left_layout.addStretch(1)  # Add a stretch to push everything to the top
 
         main_layout.addLayout(left_layout)
-        right_layout.addWidget(self.game_display)
-
         right_layout.addWidget(self.game_display)
         main_layout.addLayout(right_layout)
 
@@ -133,6 +114,9 @@ class LoginWindow(QWidget):
         self.setFixedSize(self.window_width, self.window_height)
         self.setWindowTitle("Sudoku - PWR - projekt - Dariusz Szypka")
         self.show()
+
+    def change_difficulty(self, value):
+        self.game_display.difficulty_level = value  # Przekaż nową wartość poziomu trudności do GameWidget
 
     def start_game(self):
         self.error_label.clear()  # Clear any previous error messages
@@ -172,9 +156,6 @@ class LoginWindow(QWidget):
             self.game_display.setVisible(True)  # Show the game display
             self.game_display.setFocus()  # Give focus to the GameWidget after starting the game
 
-    def update_difficulty(self, value):
-        self.game_display.difficulty = value
-
 
 class GameSolverThread(threading.Thread):
     def __init__(self, game_widget):
@@ -195,7 +176,6 @@ class GameWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.solve_i = self.solve_j = 0
         self.setFixedSize(self.side, self.side)
         self.grid = None
         self.begin_grid = None
@@ -205,9 +185,10 @@ class GameWidget(QWidget):
         self.timer.timeout.connect(self.update_game)
         self.setFocusPolicy(Qt.StrongFocus)  # Set focus policy to accept key events
         self.parent = parent
-        self.difficulty = 1
+        self.delay = 100  # Dodaj ten atrybut delay
         self.solve_thread = None
         self.left_cells = self.dimension * self.dimension
+        self.difficulty_level = 2  # Domyślny poziom trudności
 
     def save_game(self, file_name):
         game_state = self.serialize_game_state()
@@ -247,7 +228,7 @@ class GameWidget(QWidget):
         self.key_count = game_state['key_count']
         self.left_cells = game_state['left_cells']
 
-    def create_grid(self, level=2):
+    def create_grid(self):
         # create grid with zeros
         grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
         x = y = 0
@@ -258,7 +239,7 @@ class GameWidget(QWidget):
             grid[x][y] = num
             x += 1
         self.solve(grid, 0, 0)
-        grid, count_zeros = self.leverage_grid(grid, self.difficulty)
+        grid, count_zeros = self.leverage_grid(grid, self.difficulty_level)
         self.left_cells = count_zeros
         self.begin_grid = self.get_copy_from_grid(grid)
         return grid
@@ -267,14 +248,12 @@ class GameWidget(QWidget):
         # Adjust the grid by removing some numbers based on the level of difficulty
         cells_to_remove = int(self.dimension * self.dimension * level / 4)
         count_zeros = 0
-        for _ in range(cells_to_remove):
-            x = random.randint(0, self.dimension - 1)
-            y = random.randint(0, self.dimension - 1)
-            while grid[x][y] == 0:
-                x = random.randint(0, self.dimension - 1)
-                y = random.randint(0, self.dimension - 1)
-            grid[x][y] = 0
-            count_zeros += 1
+        while cells_to_remove > 0:
+            x, y = random.randint(0, self.dimension - 1), random.randint(0, self.dimension - 1)
+            if grid[x][y] != 0:
+                grid[x][y] = 0
+                cells_to_remove -= 1
+                count_zeros += 1
         return grid, count_zeros
 
     def is_allowed_here(self, m, i, j, num):
@@ -288,21 +267,28 @@ class GameWidget(QWidget):
                     return False
         return True
 
-    def start_game(self, level=2):
-        self.grid = self.create_grid(level)
-        self.x = self.y = 0
-        self.update_game()
-        self.timer.start(1000 // 60)  # 60 FPS
-        self.setFocus()  # Give focus to the GameWidget after starting the game
+    def start_game(self):
+        self.grid = self.create_grid()
+        self.update()
+
+    def get_copy_from_grid(self, grid):
+        return [[self.grid[i][j] for j in range(self.dimension)] for i in range(self.dimension)]
 
     def update_game(self):
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        self.draw_grids(painter)
-        self.highlight_cell(painter)
-
+        painter.setPen(QPen(Qt.black, self.thick_line, Qt.SolidLine))
+        for i in range(0, self.side, self.cell_length):
+            painter.drawLine(i, 0, i, self.side)
+            painter.drawLine(0, i, self.side, i)
+        for i in range(self.dimension):
+            for j in range(self.dimension):
+                cell = self.grid[i][j]
+                if cell != 0:
+                    painter.drawText(j * self.cell_length, i * self.cell_length, self.cell_length, self.cell_length,
+                                     Qt.AlignCenter, str(cell))
     def draw_grids(self, painter):
         font = QFont("Arial", self.cell_length // 2)
         painter.setFont(font)
@@ -370,53 +356,48 @@ class GameWidget(QWidget):
         elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             if self.solve(self.grid, 0, 0):
                 self.key_count = 0
-                self.solve_with_delay()
-                print("Finished")
-
-                # if self.solve_thread is None or not self.solve_thread.is_alive():
-                #     self.solve_thread = GameSolverThread(self)
-                #     self.solve_thread.start()
-                # else:
-                #     self.parent.error_label.setText("Solving already in progress")
+                if self.solve_thread is None or not self.solve_thread.is_alive():
+                    self.solve_thread = GameSolverThread(self)
+                    self.solve_thread.start()
+                else:
+                    self.parent.error_label.setText("Solving already in progress")
             else:
                 self.parent.error_label.setText("No solution found")
             self.parent.error_label.setText("PRESS R TO RESTART GAME")
             self.left_cells = 0
-            self.update_game()
         if self.left_cells == 0:
             self.parent.error_label.setText("Gratulation!!! You solved the task.")
 
         self.update_game()
 
     def solve_with_delay(self):
-        self.solve_i = self.solve_j = 0
-        self.solve_timer = QTimer()
-        self.solve_timer.timeout.connect(self.step)
-        self.solve_timer.start(100)  # Rozpocznij odstępy czasowe co 1 sekundę
+        grid = self.grid
+        dimension = self.dimension
 
-    def step(self):
-        if self.solve_i == self.dimension:
-            # Zakończono wypełnianie planszy, zakończ funkcję
-            self.solve_timer.stop()
-            return
-        if self.solve_j == self.dimension:
-            # Przejdź do następnego wiersza
-            self.solve_i += 1
-            self.solve_j = 0
-        # Sprawdź czy komórka jest pusta
-        if self.solve_i < self.dimension:
-            if self.grid[self.solve_i][self.solve_j] == 0:
-                for val in range(1, self.dimension + 1):
-                    if self.is_allowed_here(self.grid, self.solve_i, self.solve_j, val):
-                        self.grid[self.solve_i][self.solve_j] = val
-                        self.x, self.y = self.solve_i, self.solve_j
-                        self.update_game()
-                        return
-                # Nie znaleziono odpowiedniej wartości, cofnij się
-                self.grid[self.solve_i][self.solve_j] = 0
-                self.update_game()
-            # Przejdź do następnej komórki
-            self.solve_j += 1
+        def solve_sudoku():
+            # print("iteration: ", self.key_count)
+            # self.key_count += 1
+            # if self.key_count > 100000:
+            #     return False
+            for i in range(dimension):
+                for j in range(dimension):
+                    if grid[i][j] == 0:
+                        for val in range(1, dimension + 1):
+                            if self.is_allowed_here(grid, i, j, val):
+                                grid[i][j] = val
+                                self.left_cells -= 1
+                                self.x, self.y = i, j
+                                self.update_game()
+                                # time.sleep(0.00005)  # Dodaj krótkie opóźnienie
+                                if solve_sudoku():
+                                    return True
+                                grid[i][j] = 0
+                                self.left_cells += 1
+                                self.update_game()
+                        return False
+            return True
+        if solve_sudoku():
+            self.parent.error_label.setText("Sudoku solved!")
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
