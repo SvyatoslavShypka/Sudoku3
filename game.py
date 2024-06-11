@@ -265,7 +265,7 @@ class GameWidget(QWidget):
 
     def leverage_grid(self, grid, level):
         # Adjust the grid by removing some numbers based on the level of difficulty
-        cells_to_remove = int(self.dimension * self.dimension * level / 4)
+        cells_to_remove = int(self.dimension * self.dimension * level / 4 - 5)
         count_zeros = 0
         for _ in range(cells_to_remove):
             x = random.randint(0, self.dimension - 1)
