@@ -247,7 +247,7 @@ class GameWidget(QWidget):
         self.key_count = game_state['key_count']
         self.left_cells = game_state['left_cells']
 
-    def create_grid(self, level=2):
+    def create_grid(self):
         # create grid with zeros
         grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
         x = y = 0
@@ -288,8 +288,8 @@ class GameWidget(QWidget):
                     return False
         return True
 
-    def start_game(self, level=2):
-        self.grid = self.create_grid(level)
+    def start_game(self):
+        self.grid = self.create_grid()
         self.x = self.y = 0
         self.update_game()
         self.timer.start(1000 // 60)  # 60 FPS
@@ -389,6 +389,8 @@ class GameWidget(QWidget):
         self.update_game()
 
     def solve_with_delay(self):
+        print("key_count: ", self.key_count)
+        self.key_count += 1
         self.solve_i = self.solve_j = 0
         self.solve_timer = QTimer()
         self.solve_timer.timeout.connect(self.step)
