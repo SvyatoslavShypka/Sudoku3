@@ -195,6 +195,8 @@ class GameWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.start_val = 1
+        self.num_found = False
         self.solve_timer = QTimer()
         self.solve_i = self.solve_j = 0
         self.setFixedSize(self.side, self.side)
@@ -270,9 +272,10 @@ class GameWidget(QWidget):
         #         num = random.randint(1, self.dimension)
         #     grid[x][y] = num
         #     x += 1
-        self.solve(grid, 0, 0)
-        grid, count_zeros = self.leverage_grid(grid, self.difficulty)
-        self.left_cells = count_zeros
+        # self.solve(grid, 0, 0)
+        # grid, count_zeros = self.leverage_grid(grid, self.difficulty)
+        # self.left_cells = count_zeros
+        self.left_cells = 54
         self.begin_grid = self.get_copy_from_grid(grid)
         print(self.begin_grid)
         return grid
@@ -383,33 +386,19 @@ class GameWidget(QWidget):
                     self.parent.error_label.setText("Invalid move")
         elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self.solve_with_delay()
-            # if self.solve(self.grid, 0, 0):
-            #     self.key_count = 0
-            #     self.solve_with_delay()
-            #     print("Finished")
-            #
-            #     # if self.solve_thread is None or not self.solve_thread.is_alive():
-            #     #     self.solve_thread = GameSolverThread(self)
-            #     #     self.solve_thread.start()
-            #     # else:
-            #     #     self.parent.error_label.setText("Solving already in progress")
-            # else:
-            #     self.parent.error_label.setText("No solution found")
-            # self.parent.error_label.setText("PRESS R TO RESTART GAME")
             self.left_cells = 0
             self.update_game()
         if self.left_cells == 0:
-            self.parent.error_label.setText("Gratulation!!! You solved the task.")
-
+            self.parent.error_label.setText("Congratulations!!! You solved the task.")
         self.update_game()
 
-    def solve_with_delay(self):
-        self.grid = self.get_copy_from_grid(self.begin_grid)
-        self.update_game()
-        self.solve_i, self.solve_j = 0, 0
-        self.solve_timer.timeout.connect(self.step)
-        self.solve_timer.start(100)  # Adjust the delay as necessary
-        print("Finished")
+    # def solve_with_delay(self):
+    #     self.grid = self.get_copy_from_grid(self.begin_grid)
+    #     self.update_game()
+    #     self.solve_i, self.solve_j = 0, 0
+    #     self.solve_timer.timeout.connect(self.step)
+    #     self.solve_timer.start(100)  # Adjust the delay as necessary
+    #     print("Finished")
 
     def step(self):
         print(f"Stepping: solve_i={self.solve_i}, solve_j={self.solve_j}")
@@ -475,6 +464,61 @@ class GameWidget(QWidget):
             for j in range(len(copy_grid[0])):
                 copy_grid[i][j] = origin_grid[i][j]
         return copy_grid
+
+    def solve_with_delay(self):
+        self.grid = self.get_copy_from_grid(self.begin_grid)
+        self.update_game()
+        self.solve_i, self.solve_j = 0, 0
+        self.solve_stack = []  # Stack to keep track of cells being solved
+        self.solve_timer = QTimer()
+        self.solve_timer.timeout.connect(self.step_solve)
+        self.solve_timer.start(100)  # Adjust the delay as necessary
+        print("Started step-by-step solving")
+
+    def step_solve(self):
+        if self.solve_i >= self.dimension:
+            self.solve_timer.stop()
+            print("Finished step-by-step solving")
+            self.parent.error_label.setText("Solved the puzzle step-by-step")
+            return
+
+        # Find the next empty cell
+        while self.solve_i < self.dimension and self.grid[self.solve_i][self.solve_j] != 0:
+            self.solve_j += 1
+            if self.solve_j == self.dimension:
+                self.solve_j = 0
+                self.solve_i += 1
+
+        if self.solve_i < self.dimension:
+            if not self.num_found:
+                self.num_found = False
+            else:
+                self.start_val = 1
+
+            if self.solve_stack and self.solve_stack[-1][0] == self.solve_i and self.solve_stack[-1][1] == self.solve_j:
+                # Retrieve the last attempted value and increment
+                _, _, last_val = self.solve_stack.pop()
+                self.start_val = last_val + 1
+
+            for val in range(self.start_val, self.dimension + 1):
+                if self.is_allowed_here(self.grid, self.solve_i, self.solve_j, val):
+                    self.grid[self.solve_i][self.solve_j] = val
+                    self.solve_stack.append((self.solve_i, self.solve_j, val))  # Save the cell state
+                    self.update()
+                    self.num_found = True
+                    break
+
+            if not self.num_found:
+                if self.solve_stack:
+                    last_i, last_j, _ = self.solve_stack.pop()
+                    self.grid[last_i][last_j] = 0
+                    self.solve_i, self.solve_j = last_i, last_j
+                    self.solve_j -= 1  # Move back to try next value
+                    if self.solve_j < 0:
+                        self.solve_i -= 1
+                        self.solve_j = self.dimension - 1
+
+        self.update_game()
 
 
 if __name__ == '__main__':
