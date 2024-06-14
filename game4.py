@@ -475,6 +475,7 @@ class GameWidget(QWidget):
         self.solve_timer.start(100)  # Adjust the delay as necessary
         print("Started step-by-step solving")
 
+
     def step_solve(self):
         if self.solve_i >= self.dimension:
             self.solve_timer.stop()
