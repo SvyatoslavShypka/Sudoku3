@@ -80,27 +80,27 @@ class LoginWindow(QWidget):
         self.exit_button.clicked.connect(self.exit_app)
         left_layout.addWidget(self.exit_button)
 
-        self.difficulty_slider = QSlider(Qt.Horizontal, self)  # Tworzenie slidera
-        self.difficulty_slider.setMinimum(1)  # Minimalna wartość
-        self.difficulty_slider.setMaximum(3)  # Maksymalna wartość
-        self.difficulty_slider.setValue(1)  # Domyślna wartość
-        self.difficulty_slider.setTickInterval(1)  # Odstęp między tickami
+        self.difficulty_slider = QSlider(Qt.Horizontal, self)  # Slider creation
+        self.difficulty_slider.setMinimum(1)
+        self.difficulty_slider.setMaximum(3)
+        self.difficulty_slider.setValue(1)  # default value
+        self.difficulty_slider.setTickInterval(1)
         self.difficulty_slider.setTickPosition(QSlider.TicksBelow)
-        # # Ustawianie fiksowanego rozmiaru dla slidera
-        # Ustawianie fiksowanego rozmiaru dla slidera
+
+        # Making fixed size for slider
         self.difficulty_slider.setFixedWidth(200)
         self.difficulty_slider.setFixedHeight(20)
 
-        # Dodawanie tytułu do slidera
+        # Slider label
         slider_title = QLabel("Difficulty Level", self)
         slider_title.setAlignment(Qt.AlignCenter)
 
-        # Dodawanie znaczeń cyfrowych
+        # Slider values
         self.slider_value_label = QLabel(f"Current Value: {self.difficulty_slider.value()}", self)
         self.slider_value_label.setAlignment(Qt.AlignCenter)
 
-        # Aktualizacja wartości cyfrowej przy zmianie slidera
-        self.difficulty_slider.valueChanged.connect(self.update_difficulty)  # Połączenie sygnału
+        # Slider value update
+        self.difficulty_slider.valueChanged.connect(self.update_difficulty)
         self.difficulty_slider.valueChanged.connect(lambda value: self.slider_value_label.setText(f"Current Value: {value}"))
 
         self.instructions_label.setText(
@@ -131,7 +131,56 @@ class LoginWindow(QWidget):
         self.game_display.setVisible(False)  # Initially hide the game display
 
         self.setFixedSize(self.window_width, self.window_height)
-        self.setWindowTitle("Sudoku - PWR - projekt - Dariusz Szypka")
+        self.setWindowTitle("Sudoku Game - Dariusz Szypka")
+
+        self.setStyleSheet("""
+            QWidget {
+            background-color: #adaec4;
+                   }
+            QPushButton {
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            text-align: center; 
+            text-decoration: none; 
+            display: inline-block; 
+            font-size: 16px; 
+            margin: 4px 2px; 
+            transition-duration: 0.4s; 
+            cursor: pointer; /* Pointer cursor on hover */
+            max-width: 150px; /* Maximum width */
+            max-height: 40px; /* Maximum height */
+                }
+            QPushButton:hover {
+            background-color: #ebd9bc; 
+            color: black; /* Black text on hover */
+                }
+            QLabel {
+            color: #333;
+                }
+            QSlider::groove:horizontal {
+                border: 1px solid #bbb;
+                background: #ebd9bc;
+                height: 10px;
+                border-radius: 4px;
+                   }
+            QSlider::sub-page:horizontal {
+                background: #4CAF50;
+                border: 1px solid #4CAF50;
+                height: 10px;
+                border-radius: 4px;
+                   }
+            QSlider::handle:horizontal {
+                background: #000000;
+                border: 1px solid #4CAF50;
+                width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                margin: -5px 0;
+                   }
+               """)
+
         self.show()
 
     def start_game(self):
@@ -144,7 +193,7 @@ class LoginWindow(QWidget):
     def save_game(self):
         self.error_label.clear()  # Clear any previous error messages
 
-        # Generate the suggested filename
+
         current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
         suggested_filename = f"{current_time}.json"
 
@@ -195,8 +244,6 @@ class GameWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.start_val = 1
-        self.num_found = False
         self.solve_timer = QTimer()
         self.solve_i = self.solve_j = 0
         self.setFixedSize(self.side, self.side)
@@ -238,7 +285,7 @@ class GameWidget(QWidget):
             'y': self.y,
             'key_count': self.key_count,
             'left_cells': self.left_cells,
-            # Dodaj inne parametry gry do serializacji
+
         }
         return game_state
 
@@ -251,19 +298,22 @@ class GameWidget(QWidget):
         self.left_cells = game_state['left_cells']
 
     def create_grid(self):
-     # create grid with zeros
-        grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
-        x = y = 0
-        num = random.randint(1, self.dimension)
-        for i in range(self.dimension):
-            while not self.is_allowed_here(grid, x, y, num):
-                num = random.randint(1, self.dimension)
-            grid[x][y] = num
-            x += 1
+        grid = [[6, 1, 5, 2, 0, 0, 0, 0, 0],
+                [0, 0, 7, 1, 0, 0, 0, 6, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 9, 0],
+                [5, 0, 0, 0, 0, 2, 8, 1, 3],
+                [0, 0, 9, 0, 7, 0, 0, 0, 0],
+                [8, 0, 0, 7, 2, 0, 9, 0, 6],
+                [0, 0, 0, 0, 1, 0, 2, 0, 4],
+                [2, 0, 0, 8, 0, 0, 7, 0, 0]
+                ]
+
         self.solve(grid, 0, 0)
         grid, count_zeros = self.leverage_grid(grid, self.difficulty)
         self.left_cells = count_zeros
         self.begin_grid = self.get_copy_from_grid(grid)
+        print(self.begin_grid)
         return grid
 
     def leverage_grid(self, grid, level):
@@ -372,11 +422,48 @@ class GameWidget(QWidget):
                     self.parent.error_label.setText("Invalid move")
         elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self.solve_with_delay()
-            # self.left_cells = 0
+            self.left_cells = 0
             self.update_game()
         if self.left_cells == 0:
-            self.parent.error_label.setText("Congratulations!!! You solved the task.")
+            self.parent.error_label.setText("Congratulation!!! You solved the task.")
+
         self.update_game()
+
+    def solve_with_delay(self):
+        self.grid = self.get_copy_from_grid(self.begin_grid)
+        self.update_game()
+        self.solve_i, self.solve_j = 0, 0
+        self.solve_timer.timeout.connect(self.step)
+        self.solve_timer.start(100)  # Adjust the delay as necessary
+        print("Finished")
+
+    def step(self):
+        print(f"Stepping: solve_i={self.solve_i}, solve_j={self.solve_j}")
+        while self.solve_i < self.dimension and self.grid[self.solve_i][self.solve_j] != 0:
+            self.solve_j += 1
+            if self.solve_j == self.dimension:
+                self.solve_j = 0
+                self.solve_i += 1
+            print(f"Skipping filled cell: solve_i={self.solve_i}, solve_j={self.solve_j}")
+
+        if self.solve_i < self.dimension:
+            num_found = False
+            for val in range(1, self.dimension + 1):
+                if self.is_allowed_here(self.grid, self.solve_i, self.solve_j, val):
+                    print(f"Trying value {val} at solve_i={self.solve_i}, solve_j={self.solve_j}")
+                    self.grid[self.solve_i][self.solve_j] = val
+                    self.update()
+                    num_found = True
+                    break
+            if not num_found:
+                self.grid[self.solve_i][self.solve_j] = 0
+            self.solve_j += 1
+            if self.solve_j == self.dimension:
+                self.solve_j = 0
+                self.solve_i += 1
+        else:
+            self.solve_timer.stop()
+            print("solve_timer was stopped")
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
@@ -413,70 +500,12 @@ class GameWidget(QWidget):
                 copy_grid[i][j] = origin_grid[i][j]
         return copy_grid
 
-    def solve_with_delay(self):
-        self.grid = self.get_copy_from_grid(self.begin_grid)
-        self.update_game()
-        self.solve_i, self.solve_j = 0, 0
-        self.solve_stack = []  # Stack to keep track of cells being solved
-        self.solve_timer = QTimer()
-        self.solve_timer.timeout.connect(self.step_solve)
-        self.solve_timer.start(5)  # Adjust the delay as necessary
-
-    def step_solve(self):
-        if self.solve_i >= self.dimension:
-            self.solve_timer.stop()
-            self.parent.error_label.setText("Solved the puzzle step-by-step")
-            return
-
-        # Find the next empty cell
-        while self.solve_i < self.dimension and self.grid[self.solve_i][self.solve_j] != 0:
-            self.solve_j += 1
-            if self.solve_j == self.dimension:
-                self.solve_j = 0
-                self.solve_i += 1
-
-        if self.solve_i < self.dimension:
-            if self.num_found:
-                self.num_found = False
-                self.start_val = 1
-
-            # if self.solve_stack and self.solve_stack[-1][0] == self.solve_i and self.solve_stack[-1][1] == self.solve_j:
-            #     # Retrieve the last attempted value and increment
-            #     print("test_retrieve")
-            #     _, _, self.last_val = self.solve_stack.pop()
-            #     self.start_val = self.last_val + 1
-
-            for val in range(self.start_val, self.dimension + 1):
-                if self.is_allowed_here(self.grid, self.solve_i, self.solve_j, val):
-                    self.grid[self.solve_i][self.solve_j] = val
-                    self.left_cells -= 1
-                    self.solve_stack.append((self.solve_i, self.solve_j, val))  # Save the cell state
-                    self.update()
-                    self.num_found = True
-                    break
-
-            if not self.num_found:
-                if self.solve_stack:
-                    last_i, last_j, last_val = self.solve_stack.pop()
-                    self.grid[last_i][last_j] = 0
-                    self.left_cells += 1
-                    self.start_val = last_val + 1
-                    self.solve_i, self.solve_j = last_i, last_j
-                    self.solve_j -= 1  # Move back to try next value
-                    if self.solve_j < 0:
-                        self.solve_i -= 1
-                        self.solve_j = self.dimension - 1
-
-        self.update_game()
-
 
 if __name__ == '__main__':
     app = QApplication([])
-    # Ustawianie ikonki aplikacji
     app_icon = QIcon("icon.ico")
     app.setWindowIcon(app_icon)
 
     login_window = LoginWindow()
 
     app.exec()
-
