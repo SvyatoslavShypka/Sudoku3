@@ -45,8 +45,7 @@ class LoginWindow(QWidget):
     def exit_app(self):
         reply = QMessageBox.question(self, 'Quit Application',
                                      "<b>Are you sure you want to quit?</b>",
-                                     QMessageBox.Yes |  QMessageBox.No)
-
+                                     QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             QApplication.instance().quit()
 
@@ -276,7 +275,6 @@ class GameWidget(QWidget):
             'y': self.y,
             'key_count': self.key_count,
             'left_cells': self.left_cells,
-
         }
         return game_state
 
