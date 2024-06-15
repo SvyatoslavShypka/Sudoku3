@@ -44,8 +44,8 @@ class LoginWindow(QWidget):
 
     def exit_app(self):
         reply = QMessageBox.question(self, 'Quit Application',
-                                     "Are you sure you want to quit?",
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                                     "<b>Are you sure you want to quit?</b>",
+                                     QMessageBox.Yes |  QMessageBox.No)
 
         if reply == QMessageBox.Yes:
             QApplication.instance().quit()
@@ -196,7 +196,7 @@ class LoginWindow(QWidget):
         suggested_filename = f"{current_time}.json"
 
         # Prompt the user for the filename
-        filename, ok = QInputDialog.getText(self, "Save Game", "Enter filename:", text=suggested_filename)
+        filename, ok = QInputDialog.getText(self, "Save Game", "<b>Enter filename:</b>", text=suggested_filename)
 
         if ok and filename:
             self.game_display.save_game(filename)
@@ -254,7 +254,7 @@ class GameWidget(QWidget):
         game_state = self.serialize_game_state()
         with open(file_name, 'w') as file:
             json.dump(game_state, file)
-        self.parent.error_label.setText("Game saved successfully into file " + file_name)
+        self.parent.error_label.setText("<b>Game saved successfully into file:  </b>" + file_name)
 
     def load_game(self, file_name):
         try:
@@ -262,11 +262,11 @@ class GameWidget(QWidget):
                 game_state = json.load(file)
             self.deserialize_game_state(game_state)
             self.update_game()
-            self.parent.error_label.setText("Game loaded successfully")
+            self.parent.error_label.setText("<b>Game loaded successfully</b>")
         except FileNotFoundError:
-            self.parent.error_label.setText("No saved game found")
+            self.parent.error_label.setText("<b>No saved game found</b>")
         except json.JSONDecodeError:
-            self.parent.error_label.setText("Error loading saved game")
+            self.parent.error_label.setText("<b>Error loading saved game</b>")
 
     def serialize_game_state(self):
         game_state = {
@@ -407,13 +407,13 @@ class GameWidget(QWidget):
                     self.left_cells -= 1
                     self.parent.error_label.clear()  # Clear the error message if the move is valid
                 else:
-                    self.parent.error_label.setText("Invalid move")
+                    self.parent.error_label.setText("<b>Invalid move</b>")
         elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self.solve_with_delay()
             # self.left_cells = 0
             self.update_game()
         if self.left_cells == 0:
-            self.parent.error_label.setText("Congratulations!!! You solved the task.")
+            self.parent.error_label.setText("<b>Congratulations!!! You solved the puzzle.</b>")
         self.update_game()
 
     def mousePressEvent(self, event: QMouseEvent):
@@ -463,7 +463,7 @@ class GameWidget(QWidget):
     def step_solve(self):
         if self.solve_i >= self.dimension:
             self.solve_timer.stop()
-            self.parent.error_label.setText("Solved the puzzle step-by-step")
+            self.parent.error_label.setText("<b> Automatically solved the puzzle step-by-step</b>")
             return
 
         # Find the next empty cell
