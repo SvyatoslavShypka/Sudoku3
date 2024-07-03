@@ -305,7 +305,7 @@ class GameWidget(QWidget):
         # Adjust the grid by removing some numbers based on the level of difficulty
         # it's not the best variant
         cells_to_remove = int(self.dimension * self.dimension * level / 4 - 3)
-        cells_to_remove_box = cells_to_remove // 9 + 1
+        cells_to_remove_box = cells_to_remove // 9
         count_zeros = 0
         x_step = y_step = 0
         for _ in range(cells_to_remove):
