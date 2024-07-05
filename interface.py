@@ -316,7 +316,6 @@ class GameWidget(QWidget):
                 y = random.randint(0, 2) + y_step
                 # x = random.randint(0, self.dimension - 1)
                 # y = random.randint(0, self.dimension - 1)
-
             grid[x][y] = 0
             count_zeros += 1
             if count_zeros % cells_to_remove_box == 0:
