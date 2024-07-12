@@ -304,11 +304,14 @@ class GameWidget(QWidget):
     def leverage_grid(self, grid, level):
         # Adjust the grid by removing some numbers based on the level of difficulty
         # it's not the best variant
-        cells_to_remove = int(self.dimension * self.dimension * level / 4 - 3)
+        cells_to_remove = int(self.dimension * self.dimension * level / 4 - 9)
+        print("cells_to_remove: ", cells_to_remove)
         cells_to_remove_box = cells_to_remove // 9
+        print("cells_to_remove_box: ", cells_to_remove_box)
+
         count_zeros = 0
         x_step = y_step = 0
-        for _ in range(cells_to_remove):
+        for _ in range(cells_to_remove_box * 9):
             x = random.randint(0, 2) + x_step
             y = random.randint(0, 2) + y_step
             while grid[x][y] == 0:
@@ -325,6 +328,7 @@ class GameWidget(QWidget):
                     y_step += 3
                     if y_step > 6:
                         break
+        print("count_zeros: ", count_zeros)
         return grid, count_zeros
 
     def is_allowed_here(self, m, i, j, num):
