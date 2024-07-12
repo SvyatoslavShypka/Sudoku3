@@ -327,7 +327,6 @@ class GameWidget(QWidget):
                         break
         return grid, count_zeros
 
-
     def is_allowed_here(self, m, i, j, num):
         for it in range(self.dimension):
             if m[i][it] == num or m[it][j] == num:
@@ -337,6 +336,7 @@ class GameWidget(QWidget):
             for j in range(jt * self.square, jt * self.square + self.square):
                 if m[i][j] == num:
                     return False
+
         return True
 
     def start_game(self):
