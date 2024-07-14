@@ -317,8 +317,6 @@ class GameWidget(QWidget):
             while grid[x][y] == 0:
                 x = random.randint(0, 2) + x_step
                 y = random.randint(0, 2) + y_step
-                # x = random.randint(0, self.dimension - 1)
-                # y = random.randint(0, self.dimension - 1)
             grid[x][y] = 0
             count_zeros += 1
             if count_zeros % cells_to_remove_box == 0:
@@ -419,6 +417,7 @@ class GameWidget(QWidget):
                 if self.is_allowed_here(self.grid, self.x, self.y, num):
                     self.grid[self.x][self.y] = num
                     self.left_cells -= 1
+                    print("left_cells", self.left_cells)
                     self.parent.error_label.clear()  # Clear the error message if the move is valid
                 else:
                     self.parent.error_label.setText("<b>Invalid move</b>")
@@ -479,7 +478,6 @@ class GameWidget(QWidget):
             self.solve_timer.stop()
             self.parent.error_label.setText("<b> Automatically solved the puzzle step-by-step</b>")
             return
-
         # Find the next empty cell
         while self.solve_i < self.dimension and self.grid[self.solve_i][self.solve_j] != 0:
             self.solve_j += 1
