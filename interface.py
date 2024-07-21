@@ -456,6 +456,7 @@ class GameWidget(QWidget):
                 self.update_game()
         return False
 
+
     def get_copy_from_grid(self, origin_grid):
         # create grid with zeros
         copy_grid = [[0 for _ in range(self.dimension)] for _ in range(self.dimension)]
